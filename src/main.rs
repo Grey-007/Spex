@@ -19,7 +19,7 @@ fn main() {
 }
 
 fn run() -> Result<(), Box<dyn Error>> {
-    let path = env::args().nth(1).ok_or("Usage: spex <image_path>")?;
+    let (path, colors) = parse_args(env::args().skip(1))?;
 
     // Open once for metadata that we print in this phase.
     let img = ::image::open(&path)?;
@@ -27,17 +27,49 @@ fn run() -> Result<(), Box<dyn Error>> {
 
     let pixels = load_image(&path)?;
     let sampled_pixels = sample_pixels(&pixels, 100);
-    let palette = extract_palette(&sampled_pixels, 8);
+    let palette = extract_palette(&sampled_pixels, colors);
 
     println!("Image loaded");
     println!("Width: {width}");
     println!("Height: {height}");
     println!("Original pixel count: {}", pixels.len());
     println!("Sampled pixel count: {}", sampled_pixels.len());
+    println!();
+    println!("Extracting palette ({colors} colors)...");
+    println!();
     println!("Dominant colors:");
     for color in &palette {
         println!("#{:02X}{:02X}{:02X}", color.r, color.g, color.b);
     }
 
     Ok(())
+}
+
+fn parse_args<I>(mut args: I) -> Result<(String, usize), Box<dyn Error>>
+where
+    I: Iterator<Item = String>,
+{
+    let path = args
+        .next()
+        .ok_or("Usage: spex <image_path> [--colors <number>]")?;
+
+    let mut colors = 8usize;
+    while let Some(arg) = args.next() {
+        match arg.as_str() {
+            "--colors" => {
+                let value = args
+                    .next()
+                    .ok_or("Missing value for --colors. Usage: --colors <number>")?;
+                colors = value.parse::<usize>()?;
+                if colors == 0 {
+                    return Err("Palette size must be at least 1".into());
+                }
+            }
+            _ => {
+                return Err(format!("Unknown argument: {arg}").into());
+            }
+        }
+    }
+
+    Ok((path, colors))
 }
