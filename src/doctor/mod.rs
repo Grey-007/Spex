@@ -27,7 +27,6 @@ pub fn run_doctor(config_override: Option<&Path>) -> Result<bool, Box<dyn Error>
         issues += hook_issues;
     } else {
         println!("[WARN] Skipping template and hook checks (config missing)");
-        issues += 1;
     }
 
     let engine_issues = engine_check::check_color_engine();

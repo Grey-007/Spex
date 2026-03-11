@@ -1,6 +1,6 @@
 use std::collections::HashSet;
 use std::io;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
 use crate::color_engine::engine::{build_tokens, infer_theme_from_palette};
 use crate::color_engine::format::resolve_token_path;
@@ -45,7 +45,10 @@ fn check_template_dirs(config: &TemplateConfig) -> usize {
         }
 
         if std::fs::read_dir(&path).is_err() {
-            println!("[ERROR] Template directory not readable: {}", path.display());
+            println!(
+                "[ERROR] Template directory not readable: {}",
+                path.display()
+            );
             issues += 1;
         }
     }
@@ -128,8 +131,7 @@ fn check_template_syntax(files: &HashSet<PathBuf>) -> io::Result<usize> {
 
                 if token.starts_with("colors.") && resolve_token_path(&tokens, token).is_none() {
                     issues += 1;
-                    let unknown_role =
-                        extract_role_name(token).unwrap_or("unknown");
+                    let unknown_role = extract_role_name(token).unwrap_or("unknown");
                     println!("[ERROR] Invalid template token");
                     println!();
                     println!("File: {}", file.display());
