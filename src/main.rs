@@ -1,15 +1,17 @@
 mod extract;
 mod image;
 mod models;
+mod palette;
 
 use std::env;
 use std::error::Error;
 
 use ::image::GenericImageView;
 
-use crate::extract::kmeans::extract_palette;
+use crate::extract::kmeans::extract_palette_with_sizes;
 use crate::extract::sampler::sample_pixels;
 use crate::image::loader::load_image;
+use crate::palette::filter::filter_palette;
 
 fn main() {
     if let Err(err) = run() {
@@ -27,7 +29,8 @@ fn run() -> Result<(), Box<dyn Error>> {
 
     let pixels = load_image(&path)?;
     let sampled_pixels = sample_pixels(&pixels, 100);
-    let palette = extract_palette(&sampled_pixels, colors);
+    let (palette, cluster_sizes) = extract_palette_with_sizes(&sampled_pixels, colors);
+    let palette = filter_palette(palette, cluster_sizes);
 
     println!("Image loaded");
     println!("Width: {width}");
