@@ -1,3 +1,4 @@
+mod extract;
 mod image;
 mod models;
 
@@ -6,6 +7,7 @@ use std::error::Error;
 
 use ::image::GenericImageView;
 
+use crate::extract::sampler::sample_pixels;
 use crate::image::loader::load_image;
 
 fn main() {
@@ -23,11 +25,13 @@ fn run() -> Result<(), Box<dyn Error>> {
     let (width, height) = img.dimensions();
 
     let pixels = load_image(&path)?;
+    let sampled_pixels = sample_pixels(&pixels, 100);
 
     println!("Image loaded");
     println!("Width: {width}");
     println!("Height: {height}");
-    println!("Total pixel count: {}", pixels.len());
+    println!("Original pixel count: {}", pixels.len());
+    println!("Sampled pixel count: {}", sampled_pixels.len());
 
     Ok(())
 }
