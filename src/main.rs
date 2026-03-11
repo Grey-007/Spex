@@ -2,6 +2,7 @@ mod extract;
 mod image;
 mod models;
 mod palette;
+mod preview;
 
 use std::env;
 use std::error::Error;
@@ -12,6 +13,7 @@ use crate::extract::kmeans::extract_palette_with_sizes;
 use crate::extract::sampler::sample_pixels;
 use crate::image::loader::load_image;
 use crate::palette::filter::filter_palette;
+use crate::preview::terminal::print_palette;
 
 fn main() {
     if let Err(err) = run() {
@@ -40,10 +42,7 @@ fn run() -> Result<(), Box<dyn Error>> {
     println!();
     println!("Extracting palette ({colors} colors)...");
     println!();
-    println!("Dominant colors:");
-    for color in &palette {
-        println!("#{:02X}{:02X}{:02X}", color.r, color.g, color.b);
-    }
+    print_palette(&palette);
 
     Ok(())
 }
