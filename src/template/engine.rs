@@ -116,9 +116,7 @@ fn run_hooks(config: &TemplateConfig) -> io::Result<()> {
     for command in &config.hooks.commands {
         let status = Command::new("sh").arg("-c").arg(command).status()?;
         if !status.success() {
-            return Err(io::Error::other(format!(
-                "Hook command failed: {command}"
-            )));
+            return Err(io::Error::other(format!("Hook command failed: {command}")));
         }
     }
 

@@ -7,7 +7,8 @@ pub fn resolve_token(token: &str, palette: &ThemePalette) -> Option<String> {
     }
 
     if let Some(base) = token.strip_suffix("_rgb") {
-        return get_color(base, palette).map(|color| format!("{}, {}, {}", color.r, color.g, color.b));
+        return get_color(base, palette)
+            .map(|color| format!("{}, {}, {}", color.r, color.g, color.b));
     }
 
     if let Some((base, arg)) = split_call(token, "_rgba(") {
