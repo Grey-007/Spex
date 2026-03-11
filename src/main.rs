@@ -9,10 +9,10 @@ use std::error::Error;
 
 use ::image::GenericImageView;
 
-use crate::extract::kmeans::extract_palette_with_sizes;
+use crate::extract::mediancut::extract_palette_mediancut;
 use crate::extract::sampler::sample_pixels;
 use crate::image::loader::load_image;
-use crate::palette::filter::filter_palette;
+use crate::palette::balance::balance_palette;
 use crate::preview::terminal::print_palette;
 
 fn main() {
@@ -31,8 +31,8 @@ fn run() -> Result<(), Box<dyn Error>> {
 
     let pixels = load_image(&path)?;
     let sampled_pixels = sample_pixels(&pixels, 100);
-    let (palette, cluster_sizes) = extract_palette_with_sizes(&sampled_pixels, colors);
-    let palette = filter_palette(palette, cluster_sizes);
+    let palette = extract_palette_mediancut(&sampled_pixels, colors);
+    let palette = balance_palette(palette);
 
     println!("Image loaded");
     println!("Width: {width}");
