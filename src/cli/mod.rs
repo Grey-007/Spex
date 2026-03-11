@@ -1,0 +1,91 @@
+use std::path::PathBuf;
+
+use clap::{ArgAction, CommandFactory, Parser, Subcommand, ValueEnum};
+use clap_complete::{self, Shell};
+
+#[derive(Debug, Parser)]
+#[command(
+    name = "spex",
+    version,
+    about = "Extract, preview, and export image-based color themes"
+)]
+pub struct Cli {
+    /// Input image path (shortcut for `spex generate <IMAGE>`)
+    #[arg(value_name = "IMAGE")]
+    pub image: Option<PathBuf>,
+
+    /// Number of palette colors to generate
+    #[arg(long, global = true, default_value_t = 16, value_name = "N")]
+    pub colors: usize,
+
+    /// Theme mode for role assignment and ordering
+    #[arg(long, global = true, default_value_t = ThemeArg::Dark, value_enum, value_name = "MODE")]
+    pub theme: ThemeArg,
+
+    /// Export generated theme palette
+    #[arg(long, global = true, value_enum, value_name = "FORMAT")]
+    pub export: Option<ExportArg>,
+
+    /// Override config.toml path used by template engine
+    #[arg(long, global = true, value_name = "PATH")]
+    pub config: Option<PathBuf>,
+
+    /// Render templates but do not write files or execute hooks
+    #[arg(long, global = true, action = ArgAction::SetTrue)]
+    pub dry_run: bool,
+
+    /// Print additional debugging output
+    #[arg(long, global = true, action = ArgAction::SetTrue)]
+    pub verbose: bool,
+
+    /// Disable terminal palette preview output
+    #[arg(long, global = true, action = ArgAction::SetTrue)]
+    pub no_preview: bool,
+
+    #[command(subcommand)]
+    pub command: Option<Commands>,
+}
+
+#[derive(Debug, Clone, Copy, ValueEnum)]
+pub enum ThemeArg {
+    Dark,
+    Light,
+}
+
+#[derive(Debug, Clone, Copy, ValueEnum)]
+pub enum ExportArg {
+    Json,
+    Css,
+    Terminal,
+}
+
+#[derive(Debug, Subcommand)]
+pub enum Commands {
+    /// Generate palette, assign roles, render templates, run hooks
+    Generate {
+        /// Input image path
+        #[arg(value_name = "IMAGE")]
+        image: PathBuf,
+    },
+    /// Preview palette in terminal without rendering templates
+    Preview {
+        /// Input image path
+        #[arg(value_name = "IMAGE")]
+        image: PathBuf,
+    },
+    /// Start daemon mode (reserved for future implementation)
+    Daemon,
+    /// Print shell completion script
+    Completions {
+        /// Target shell for completion script
+        #[arg(value_name = "SHELL")]
+        shell: Shell,
+    },
+    /// Print resolved config path information
+    Config,
+}
+
+pub fn print_completions(shell: Shell) {
+    let mut command = Cli::command();
+    clap_complete::generate(shell, &mut command, "spex", &mut std::io::stdout());
+}
