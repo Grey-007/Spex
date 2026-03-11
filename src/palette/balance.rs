@@ -27,11 +27,7 @@ pub fn balance_palette(colors: Vec<Color>, k: usize) -> Vec<Color> {
         return fill_to_k(original, k);
     }
 
-    scored
-        .into_iter()
-        .take(k)
-        .map(|(color, _)| color)
-        .collect()
+    scored.into_iter().take(k).map(|(color, _)| color).collect()
 }
 
 fn rgb_to_hsl(color: Color) -> (f32, f32, f32) {
