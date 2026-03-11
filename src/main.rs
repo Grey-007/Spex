@@ -1,3 +1,4 @@
+mod cli;
 mod export;
 mod extract;
 mod image;
@@ -6,11 +7,13 @@ mod palette;
 mod preview;
 mod template;
 
-use std::env;
 use std::error::Error;
+use std::path::Path;
 
 use ::image::GenericImageView;
+use clap::Parser;
 
+use crate::cli::{print_completions, Cli, Commands, ExportArg, ThemeArg};
 use crate::export::css::export_css;
 use crate::export::json::export_json;
 use crate::export::terminal::export_terminal;
@@ -22,35 +25,71 @@ use crate::palette::balance::balance_palette;
 use crate::palette::hue::enforce_hue_diversity;
 use crate::palette::roles::assign_roles;
 use crate::preview::terminal::print_palette;
+use crate::template::config::{expand_tilde, get_config_file_path};
 use crate::template::engine::run_template_engine;
 
+#[derive(Debug, Clone, Copy)]
+enum RunMode {
+    Generate,
+    PreviewOnly,
+}
+
 fn main() {
-    if let Err(err) = run() {
+    let cli = Cli::parse();
+    if let Err(err) = run(cli) {
         eprintln!("Error: {err}");
         std::process::exit(1);
     }
 }
 
-#[derive(Debug, Clone, Copy)]
-enum ExportFormat {
-    Json,
-    Css,
-    Terminal,
+fn run(cli: Cli) -> Result<(), Box<dyn Error>> {
+    if cli.colors == 0 {
+        return Err("Palette size must be at least 1".into());
+    }
+
+    match &cli.command {
+        Some(Commands::Completions { shell }) => {
+            print_completions(*shell);
+            return Ok(());
+        }
+        Some(Commands::Config) => {
+            print_config_info(cli.config.as_deref());
+            return Ok(());
+        }
+        Some(Commands::Daemon) => {
+            println!("Daemon mode is not implemented yet.");
+            return Ok(());
+        }
+        Some(Commands::Generate { image }) => {
+            return run_pipeline(image, &cli, RunMode::Generate);
+        }
+        Some(Commands::Preview { image }) => {
+            return run_pipeline(image, &cli, RunMode::PreviewOnly);
+        }
+        None => {}
+    }
+
+    if let Some(image) = &cli.image {
+        run_pipeline(image, &cli, RunMode::Generate)
+    } else {
+        Err("No image path provided. Use `spex --help`.".into())
+    }
 }
 
-fn run() -> Result<(), Box<dyn Error>> {
-    let (path, colors, theme, export, dry_run) = parse_args(env::args().skip(1))?;
+fn run_pipeline(image_path: &Path, cli: &Cli, mode: RunMode) -> Result<(), Box<dyn Error>> {
+    let theme = map_theme(cli.theme);
 
     // Open once for metadata that we print in this phase.
-    let img = ::image::open(&path)?;
+    let img = ::image::open(image_path)?;
     let (width, height) = img.dimensions();
 
-    let pixels = load_image(&path)?;
+    let image_str = image_path.to_string_lossy();
+    let pixels = load_image(&image_str)?;
     let sampled_pixels = sample_pixels(&pixels, 100);
-    let base_palette = extract_palette_mediancut(&sampled_pixels, colors);
-    let balanced_palette = balance_palette(base_palette, colors);
+    let base_palette = extract_palette_mediancut(&sampled_pixels, cli.colors);
+    let balanced_palette = balance_palette(base_palette, cli.colors);
     let mut palette = enforce_hue_diversity(balanced_palette.clone(), 20.0);
-    palette = refill_palette(palette, &balanced_palette, colors);
+    palette = refill_palette(palette, &balanced_palette, cli.colors);
     let palette = order_palette_for_theme(palette, theme);
 
     println!("Image loaded");
@@ -59,11 +98,22 @@ fn run() -> Result<(), Box<dyn Error>> {
     println!("Original pixel count: {}", pixels.len());
     println!("Sampled pixel count: {}", sampled_pixels.len());
     println!();
-    println!("Extracting palette ({colors} colors)...");
+    println!("Extracting palette ({} colors)...", cli.colors);
     println!("Theme: {}", theme_name(theme));
+    if cli.verbose {
+        println!("Mode: {:?}", mode);
+        println!("Dry run: {}", cli.dry_run);
+        println!("No preview: {}", cli.no_preview);
+        if let Some(export) = cli.export {
+            println!("Export format: {}", export_name(export));
+        }
+    }
     println!();
-    print_palette(&palette);
-    println!();
+
+    if !cli.no_preview {
+        print_palette(&palette);
+        println!();
+    }
 
     let theme_palette = assign_roles(palette, theme);
     println!("Theme palette:");
@@ -76,88 +126,49 @@ fn run() -> Result<(), Box<dyn Error>> {
     println!("highlight:  {}", to_hex(theme_palette.highlight));
     println!("text:       {}", to_hex(theme_palette.text));
 
-    if let Some(format) = export {
-        let path = match format {
-            ExportFormat::Json => export_json(&theme_palette)?,
-            ExportFormat::Css => export_css(&theme_palette)?,
-            ExportFormat::Terminal => export_terminal(&theme_palette)?,
-        };
+    if matches!(mode, RunMode::Generate) {
+        if let Some(format) = cli.export {
+            let path = match format {
+                ExportArg::Json => export_json(&theme_palette)?,
+                ExportArg::Css => export_css(&theme_palette)?,
+                ExportArg::Terminal => export_terminal(&theme_palette)?,
+            };
 
-        println!();
-        println!("Exported palette to:");
-        println!("{}", path.display());
+            println!();
+            println!("Exported palette to:");
+            println!("{}", path.display());
+        }
+
+        run_template_engine(&theme_palette, cli.dry_run, cli.config.as_deref())?;
     }
-
-    run_template_engine(&theme_palette, dry_run)?;
 
     Ok(())
 }
 
-fn parse_args<I>(
-    mut args: I,
-) -> Result<(String, usize, ThemeMode, Option<ExportFormat>, bool), Box<dyn Error>>
-where
-    I: Iterator<Item = String>,
-{
-    let path = args
-        .next()
-        .ok_or(
-            "Usage: spex <image_path> [--colors <number>] [--theme <dark|light>] [--export <json|css|terminal>] [--dry-run]",
-        )?;
+fn print_config_info(config_override: Option<&Path>) {
+    let default_path = get_config_file_path();
+    println!("Default config path:");
+    println!("{}", default_path.display());
 
-    let mut colors = 8usize;
-    let mut theme = ThemeMode::Dark;
-    let mut export = None;
-    let mut dry_run = false;
-    while let Some(arg) = args.next() {
-        match arg.as_str() {
-            "--colors" => {
-                let value = args
-                    .next()
-                    .ok_or("Missing value for --colors. Usage: --colors <number>")?;
-                colors = value.parse::<usize>()?;
-                if colors == 0 {
-                    return Err("Palette size must be at least 1".into());
-                }
-            }
-            "--theme" => {
-                let value = args
-                    .next()
-                    .ok_or("Missing value for --theme. Usage: --theme <dark|light>")?;
-                theme = parse_theme(&value)?;
-            }
-            "--export" => {
-                let value = args
-                    .next()
-                    .ok_or("Missing value for --export. Usage: --export <json|css|terminal>")?;
-                export = Some(parse_export(&value)?);
-            }
-            "--dry-run" => {
-                dry_run = true;
-            }
-            _ => {
-                return Err(format!("Unknown argument: {arg}").into());
-            }
-        }
-    }
-
-    Ok((path, colors, theme, export, dry_run))
-}
-
-fn parse_theme(value: &str) -> Result<ThemeMode, Box<dyn Error>> {
-    match value {
-        "dark" => Ok(ThemeMode::Dark),
-        "light" => Ok(ThemeMode::Light),
-        _ => Err(format!("Invalid theme '{value}'. Expected: dark or light").into()),
+    if let Some(path) = config_override {
+        println!();
+        println!("Override config path:");
+        println!("{}", expand_tilde(&path.to_string_lossy()).display());
     }
 }
 
-fn parse_export(value: &str) -> Result<ExportFormat, Box<dyn Error>> {
-    match value {
-        "json" => Ok(ExportFormat::Json),
-        "css" => Ok(ExportFormat::Css),
-        "terminal" => Ok(ExportFormat::Terminal),
-        _ => Err(format!("Invalid export format '{value}'. Expected: json, css, terminal").into()),
+fn map_theme(theme: ThemeArg) -> ThemeMode {
+    match theme {
+        ThemeArg::Dark => ThemeMode::Dark,
+        ThemeArg::Light => ThemeMode::Light,
+    }
+}
+
+fn export_name(export: ExportArg) -> &'static str {
+    match export {
+        ExportArg::Json => "json",
+        ExportArg::Css => "css",
+        ExportArg::Terminal => "terminal",
     }
 }
 
