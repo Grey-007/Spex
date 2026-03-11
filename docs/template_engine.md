@@ -1,21 +1,159 @@
-# Template Engine
+# Spex Template Engine
 
-## Variables
-- `{{background}}`, `{{surface}}`, `{{primary}}`, `{{secondary}}`, `{{accent}}`, `{{accent2}}`, `{{highlight}}`, `{{text}}`
-- Dynamic colors: `{{color0}}`, `{{color1}}`, ...
+## 1. Overview
+The Spex template engine takes your generated palette and injects those colors into text templates.
+This lets you automatically update config files for tools like Waybar, Rofi, terminals, editors, and launchers.
 
-## Loops
-Use:
+High-level flow:
+1. Spex generates a palette from an image.
+2. Spex assigns semantic roles (for example `background`, `accent`, `text`).
+3. Spex loads template files.
+4. Spex replaces template variables with palette values.
+5. Spex writes the rendered output files.
+6. Spex runs hooks (if configured and not using `--dry-run`).
+
+The system is intentionally lightweight:
+- no heavy template library
+- simple string replacement
+- safe behavior for missing variables
+
+## 2. Directory Structure
+Your Spex config directory should contain:
+
+```text
+~/.config/spex/
+    config.toml
+    templates/
 ```
+
+- `config.toml`: defines what to render and where to write output.
+- `templates/`: contains your template source files.
+
+## 3. Example `config.toml`
+Minimal example:
+
+```toml
+[[template]]
+input = "~/.config/spex/templates/waybar.css"
+output = "~/.config/waybar/colors.css"
+
+[hooks]
+commands = [
+  "pkill -SIGUSR2 waybar"
+]
+```
+
+Multiple template example:
+
+```toml
+[[template]]
+input = "~/.config/spex/templates/waybar.css"
+output = "~/.config/waybar/colors.css"
+
+[[template]]
+input = "~/.config/spex/templates/rofi.rasi"
+output = "~/.config/rofi/colors.rasi"
+```
+
+## 4. Template Variable Usage
+Spex supports semantic role variables:
+
+- `{{background}}`
+- `{{surface}}`
+- `{{primary}}`
+- `{{secondary}}`
+- `{{accent}}`
+- `{{accent2}}`
+- `{{highlight}}`
+- `{{text}}`
+
+Example template snippet:
+
+```css
+window {
+  background: {{background}};
+  color: {{text}};
+  border: 1px solid {{accent}};
+}
+```
+
+Example rendered output:
+
+```css
+window {
+  background: #0E1632;
+  color: #E6F2FF;
+  border: 1px solid #FFD166;
+}
+```
+
+## 5. Dynamic Palette Variables
+You can also reference colors by index:
+
+- `{{color0}}`
+- `{{color1}}`
+- `{{color2}}`
+- ...
+
+These map directly to the generated palette vector order.
+
+Example:
+
+```text
+primary = {{color0}}
+muted = {{color1}}
+accent = {{color2}}
+```
+
+Palette size behavior:
+- If you generate 8 colors, valid variables are typically `{{color0}}` to `{{color7}}`.
+- If you generate 16 colors, valid variables are typically `{{color0}}` to `{{color15}}`.
+- Out-of-range variables are left unchanged (they do not crash rendering).
+
+## 6. Loop Syntax
+Loop blocks iterate over the entire dynamic palette:
+
+```text
 {{#colors}}
 color{{index}} = {{value}}
 {{/colors}}
 ```
 
-## Directory Structure
-- `~/.config/spex/config.toml`
-- `~/.config/spex/templates/`
-- `~/.config/spex/docs/`
+Inside a loop:
+- `{{index}}` is the zero-based index (0, 1, 2, ...)
+- `{{value}}` is the corresponding hex color (`#RRGGBB`)
 
-## Template Directories
-Template files can be declared explicitly in `[[template]]` and discovered from `template_dirs.paths`.
+Example output (shortened):
+
+```text
+color0 = #2E3440
+color1 = #3B4252
+color2 = #88C0D0
+color3 = #A3BE8C
+```
+
+This is useful for tools that expect numbered color slots.
+
+## 7. Multiple Template Directories
+You can declare template search paths with `template_dirs.paths`:
+
+```toml
+[template_dirs]
+paths = [
+  "~/.config/spex/templates",
+  "~/.local/share/spex/templates"
+]
+```
+
+How Spex uses these paths:
+1. It processes explicit `[[template]]` entries first.
+2. It can discover additional template files from listed directories.
+3. Duplicate template inputs are ignored to avoid double-rendering.
+
+This allows sharing common template packs across systems.
+
+## Tips for Beginners
+- Start with one template file and confirm output.
+- Use `--dry-run` to preview rendered content safely.
+- Keep template files in version control when possible.
+- Prefer semantic variables (`{{background}}`, `{{text}}`) for stable theming across different palettes.
