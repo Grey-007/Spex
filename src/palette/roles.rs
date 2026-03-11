@@ -10,9 +10,11 @@ pub struct ThemePalette {
     pub accent2: Color,
     pub highlight: Color,
     pub text: Color,
+    pub colors: Vec<Color>,
 }
 
 pub fn assign_roles(colors: Vec<Color>, theme: ThemeMode) -> ThemePalette {
+    let full_palette = colors.clone();
     let mut entries = if colors.is_empty() {
         vec![Color { r: 0, g: 0, b: 0 }]
     } else {
@@ -70,6 +72,7 @@ pub fn assign_roles(colors: Vec<Color>, theme: ThemeMode) -> ThemePalette {
         accent2: entries[accent2_idx],
         highlight: entries[highlight_idx],
         text: entries[text_idx],
+        colors: full_palette,
     }
 }
 
