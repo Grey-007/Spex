@@ -84,6 +84,8 @@ pub enum Commands {
     },
     /// Print resolved config path information
     Config,
+    /// Run diagnostics for config, templates, hooks, and color engine
+    Doctor,
 }
 
 pub fn print_completions(shell: Shell) -> io::Result<()> {

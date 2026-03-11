@@ -1,5 +1,6 @@
 mod cli;
 mod color_engine;
+mod doctor;
 mod export;
 mod extract;
 mod image;
@@ -28,6 +29,7 @@ use crate::palette::roles::assign_roles;
 use crate::preview::terminal::print_palette;
 use crate::template::config::{expand_tilde, get_config_file_path};
 use crate::template::engine::run_template_engine;
+use crate::doctor::run_doctor;
 
 #[derive(Debug, Clone, Copy)]
 enum RunMode {
@@ -59,6 +61,13 @@ fn run(cli: Cli) -> Result<(), Box<dyn Error>> {
         }
         Some(Commands::Daemon) => {
             println!("Daemon mode is not implemented yet.");
+            return Ok(());
+        }
+        Some(Commands::Doctor) => {
+            let ok = run_doctor(cli.config.as_deref())?;
+            if !ok {
+                std::process::exit(1);
+            }
             return Ok(());
         }
         Some(Commands::Generate { image }) => {
