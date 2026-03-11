@@ -2,37 +2,32 @@ use std::io;
 use std::path::PathBuf;
 
 use crate::export::export_file_path;
+use crate::export::template::render_template;
 use crate::palette::roles::ThemePalette;
 
 pub fn export_css(theme: &ThemePalette) -> io::Result<PathBuf> {
-    let content = format!(
+    let mut template = String::from(
         concat!(
-            ":root {{\n",
-            "  --background: {};\n",
-            "  --surface: {};\n",
-            "  --primary: {};\n",
-            "  --secondary: {};\n",
-            "  --accent: {};\n",
-            "  --accent2: {};\n",
-            "  --highlight: {};\n",
-            "  --text: {};\n",
-            "}}\n"
+            ":root {\n",
+            "  --background: {{background}};\n",
+            "  --surface: {{surface}};\n",
+            "  --primary: {{primary}};\n",
+            "  --secondary: {{secondary}};\n",
+            "  --accent: {{accent}};\n",
+            "  --accent2: {{accent2}};\n",
+            "  --highlight: {{highlight}};\n",
+            "  --text: {{text}};\n"
         ),
-        to_hex(theme.background),
-        to_hex(theme.surface),
-        to_hex(theme.primary),
-        to_hex(theme.secondary),
-        to_hex(theme.accent),
-        to_hex(theme.accent2),
-        to_hex(theme.highlight),
-        to_hex(theme.text),
     );
+
+    for (idx, _) in theme.colors.iter().enumerate() {
+        template.push_str(&format!("  --color{idx}: {{{{color{idx}}}}};\n"));
+    }
+    template.push_str("}\n");
+
+    let content = render_template(&template, theme);
 
     let path = export_file_path("spex.css")?;
     std::fs::write(&path, content)?;
     Ok(path)
-}
-
-fn to_hex(color: crate::models::color::Color) -> String {
-    format!("#{:02X}{:02X}{:02X}", color.r, color.g, color.b)
 }
