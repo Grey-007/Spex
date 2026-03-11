@@ -49,7 +49,7 @@ fn run(cli: Cli) -> Result<(), Box<dyn Error>> {
 
     match &cli.command {
         Some(Commands::Completions { shell }) => {
-            print_completions(*shell);
+            print_completions(*shell)?;
             return Ok(());
         }
         Some(Commands::Config) => {

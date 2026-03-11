@@ -1,4 +1,5 @@
 use std::path::PathBuf;
+use std::{io, io::Write};
 
 use clap::{ArgAction, CommandFactory, Parser, Subcommand, ValueEnum};
 use clap_complete::{self, Shell};
@@ -85,7 +86,14 @@ pub enum Commands {
     Config,
 }
 
-pub fn print_completions(shell: Shell) {
+pub fn print_completions(shell: Shell) -> io::Result<()> {
     let mut command = Cli::command();
-    clap_complete::generate(shell, &mut command, "spex", &mut std::io::stdout());
+    let mut buffer = Vec::new();
+    clap_complete::generate(shell, &mut command, "spex", &mut buffer);
+
+    match io::stdout().write_all(&buffer) {
+        Ok(()) => Ok(()),
+        Err(err) if err.kind() == io::ErrorKind::BrokenPipe => Ok(()),
+        Err(err) => Err(err),
+    }
 }
