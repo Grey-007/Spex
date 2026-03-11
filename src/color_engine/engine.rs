@@ -84,7 +84,11 @@ fn select_background(palette: &[Color], theme: ThemeMode) -> Color {
             .iter()
             .copied()
             .max_by(|a, b| luminance(*a).total_cmp(&luminance(*b)))
-            .unwrap_or(Color { r: 255, g: 255, b: 255 }),
+            .unwrap_or(Color {
+                r: 255,
+                g: 255,
+                b: 255,
+            }),
     }
 }
 
@@ -102,7 +106,11 @@ fn select_highlight(palette: &[Color]) -> Color {
         .iter()
         .copied()
         .max_by(|a, b| luminance(*a).total_cmp(&luminance(*b)))
-        .unwrap_or(Color { r: 255, g: 255, b: 255 })
+        .unwrap_or(Color {
+            r: 255,
+            g: 255,
+            b: 255,
+        })
 }
 
 fn container_amount(theme: ThemeMode, amount: f32) -> f32 {
