@@ -1,4 +1,5 @@
 use std::io;
+use std::path::Path;
 use std::path::PathBuf;
 
 use serde::Deserialize;
@@ -64,7 +65,17 @@ pub fn expand_tilde(path: &str) -> PathBuf {
 }
 
 pub fn load_config() -> io::Result<Option<TemplateConfig>> {
-    let path = get_config_file_path();
+    load_config_from_path(None)
+}
+
+pub fn load_config_from_path(config_path: Option<&Path>) -> io::Result<Option<TemplateConfig>> {
+    let path = match config_path {
+        Some(path) => {
+            let raw = path.to_string_lossy();
+            expand_tilde(&raw)
+        }
+        None => get_config_file_path(),
+    };
     if !path.exists() {
         return Ok(None);
     }

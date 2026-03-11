@@ -6,7 +6,9 @@ use std::process::Command;
 
 use crate::palette::roles::ThemePalette;
 
-use super::config::{TemplateConfig, expand_tilde, get_spex_config_directory, load_config};
+use super::config::{
+    TemplateConfig, expand_tilde, get_spex_config_directory, load_config_from_path,
+};
 use super::renderer::render;
 
 struct RenderJob {
@@ -14,8 +16,12 @@ struct RenderJob {
     output: PathBuf,
 }
 
-pub fn run_template_engine(palette: &ThemePalette, dry_run: bool) -> Result<(), Box<dyn Error>> {
-    let Some(config) = load_config()? else {
+pub fn run_template_engine(
+    palette: &ThemePalette,
+    dry_run: bool,
+    config_override: Option<&Path>,
+) -> Result<(), Box<dyn Error>> {
+    let Some(config) = load_config_from_path(config_override)? else {
         return Ok(());
     };
 
