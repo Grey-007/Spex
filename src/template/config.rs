@@ -64,10 +64,6 @@ pub fn expand_tilde(path: &str) -> PathBuf {
     PathBuf::from(path)
 }
 
-pub fn load_config() -> io::Result<Option<TemplateConfig>> {
-    load_config_from_path(None)
-}
-
 pub fn load_config_from_path(config_path: Option<&Path>) -> io::Result<Option<TemplateConfig>> {
     let path = match config_path {
         Some(path) => {

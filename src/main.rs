@@ -13,7 +13,7 @@ use std::path::Path;
 use ::image::GenericImageView;
 use clap::Parser;
 
-use crate::cli::{print_completions, Cli, Commands, ExportArg, ThemeArg};
+use crate::cli::{Cli, Commands, ExportArg, ThemeArg, print_completions};
 use crate::export::css::export_css;
 use crate::export::json::export_json;
 use crate::export::terminal::export_terminal;
