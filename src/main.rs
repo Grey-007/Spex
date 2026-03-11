@@ -16,6 +16,7 @@ use ::image::GenericImageView;
 use clap::Parser;
 
 use crate::cli::{Cli, Commands, ExportArg, ThemeArg, print_completions};
+use crate::doctor::run_doctor;
 use crate::export::css::export_css;
 use crate::export::json::export_json;
 use crate::export::terminal::export_terminal;
@@ -29,7 +30,6 @@ use crate::palette::roles::assign_roles;
 use crate::preview::terminal::print_palette;
 use crate::template::config::{expand_tilde, get_config_file_path};
 use crate::template::engine::run_template_engine;
-use crate::doctor::run_doctor;
 
 #[derive(Debug, Clone, Copy)]
 enum RunMode {

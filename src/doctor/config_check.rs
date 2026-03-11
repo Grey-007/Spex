@@ -1,7 +1,9 @@
 use std::io;
 use std::path::{Path, PathBuf};
 
-use crate::template::config::{TemplateConfig, expand_tilde, get_config_file_path, load_config_from_path};
+use crate::template::config::{
+    TemplateConfig, expand_tilde, get_config_file_path, load_config_from_path,
+};
 
 pub struct ConfigCheckResult {
     pub issues: usize,

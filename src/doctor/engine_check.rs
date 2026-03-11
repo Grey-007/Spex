@@ -35,21 +35,85 @@ pub fn check_color_engine() -> usize {
 
 pub fn mock_palette() -> Vec<Color> {
     vec![
-        Color { r: 14, g: 18, b: 50 },
-        Color { r: 24, g: 36, b: 74 },
-        Color { r: 45, g: 70, b: 130 },
-        Color { r: 62, g: 99, b: 157 },
-        Color { r: 53, g: 83, b: 134 },
-        Color { r: 255, g: 209, b: 102 },
-        Color { r: 240, g: 138, b: 93 },
-        Color { r: 122, g: 215, b: 240 },
-        Color { r: 230, g: 242, b: 255 },
-        Color { r: 186, g: 198, b: 226 },
-        Color { r: 80, g: 94, b: 137 },
-        Color { r: 102, g: 125, b: 178 },
-        Color { r: 142, g: 162, b: 209 },
-        Color { r: 32, g: 45, b: 84 },
-        Color { r: 171, g: 184, b: 210 },
-        Color { r: 210, g: 217, b: 234 },
+        Color {
+            r: 14,
+            g: 18,
+            b: 50,
+        },
+        Color {
+            r: 24,
+            g: 36,
+            b: 74,
+        },
+        Color {
+            r: 45,
+            g: 70,
+            b: 130,
+        },
+        Color {
+            r: 62,
+            g: 99,
+            b: 157,
+        },
+        Color {
+            r: 53,
+            g: 83,
+            b: 134,
+        },
+        Color {
+            r: 255,
+            g: 209,
+            b: 102,
+        },
+        Color {
+            r: 240,
+            g: 138,
+            b: 93,
+        },
+        Color {
+            r: 122,
+            g: 215,
+            b: 240,
+        },
+        Color {
+            r: 230,
+            g: 242,
+            b: 255,
+        },
+        Color {
+            r: 186,
+            g: 198,
+            b: 226,
+        },
+        Color {
+            r: 80,
+            g: 94,
+            b: 137,
+        },
+        Color {
+            r: 102,
+            g: 125,
+            b: 178,
+        },
+        Color {
+            r: 142,
+            g: 162,
+            b: 209,
+        },
+        Color {
+            r: 32,
+            g: 45,
+            b: 84,
+        },
+        Color {
+            r: 171,
+            g: 184,
+            b: 210,
+        },
+        Color {
+            r: 210,
+            g: 217,
+            b: 234,
+        },
     ]
 }
