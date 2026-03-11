@@ -20,11 +20,13 @@ pub fn analyze_tokens(tokens: &[ExtractedToken]) -> AnalysisResult {
     for token in tokens {
         let category = classify_token(&token.normalized);
         let mapped = map_category(&category);
-        unique.entry(token.normalized.clone()).or_insert(AnalysisRow {
-            token: token.normalized.clone(),
-            category,
-            mapped,
-        });
+        unique
+            .entry(token.normalized.clone())
+            .or_insert(AnalysisRow {
+                token: token.normalized.clone(),
+                category,
+                mapped,
+            });
     }
 
     AnalysisResult {

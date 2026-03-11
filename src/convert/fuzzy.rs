@@ -1,14 +1,17 @@
-pub fn fuzzy_match<'a>(token: &str, candidates: &'a [&'a str], threshold: usize) -> Option<&'a str> {
+pub fn fuzzy_match<'a>(
+    token: &str,
+    candidates: &'a [&'a str],
+    threshold: usize,
+) -> Option<&'a str> {
     let normalized = token.to_lowercase();
 
     if let Some(exact) = candidates.iter().find(|c| normalized == c.to_lowercase()) {
         return Some(*exact);
     }
 
-    if let Some(prefix) = candidates
-        .iter()
-        .find(|c| normalized.starts_with(&c.to_lowercase()) || c.to_lowercase().starts_with(&normalized))
-    {
+    if let Some(prefix) = candidates.iter().find(|c| {
+        normalized.starts_with(&c.to_lowercase()) || c.to_lowercase().starts_with(&normalized)
+    }) {
         return Some(*prefix);
     }
 
@@ -28,7 +31,13 @@ pub fn fuzzy_match<'a>(token: &str, candidates: &'a [&'a str], threshold: usize)
         }
     }
 
-    best.and_then(|(candidate, dist)| if dist <= threshold { Some(candidate) } else { None })
+    best.and_then(|(candidate, dist)| {
+        if dist <= threshold {
+            Some(candidate)
+        } else {
+            None
+        }
+    })
 }
 
 fn levenshtein(a: &str, b: &str) -> usize {
@@ -45,7 +54,11 @@ fn levenshtein(a: &str, b: &str) -> usize {
 
     for i in 1..=a_chars.len() {
         for j in 1..=b_chars.len() {
-            let cost = if a_chars[i - 1] == b_chars[j - 1] { 0 } else { 1 };
+            let cost = if a_chars[i - 1] == b_chars[j - 1] {
+                0
+            } else {
+                1
+            };
             dp[i][j] = (dp[i - 1][j] + 1)
                 .min(dp[i][j - 1] + 1)
                 .min(dp[i - 1][j - 1] + cost);

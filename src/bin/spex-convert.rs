@@ -11,7 +11,11 @@ use spex::convert::mapper::map_category;
 use spex::convert::rewriter::rewrite_template;
 
 #[derive(Debug, Parser)]
-#[command(name = "spex-convert", version, about = "Convert external templates to spex syntax")]
+#[command(
+    name = "spex-convert",
+    version,
+    about = "Convert external templates to spex syntax"
+)]
 struct Cli {
     #[arg(value_name = "TEMPLATE_FILE")]
     template_file: PathBuf,
@@ -39,12 +43,8 @@ fn run(cli: Cli) -> Result<(), Box<dyn Error>> {
         return Err(format!("Unreadable file: {}", cli.template_file.display()).into());
     }
 
-    let input = std::fs::read_to_string(&cli.template_file).map_err(|err| {
-        format!(
-            "Unreadable file: {} ({err})",
-            cli.template_file.display()
-        )
-    })?;
+    let input = std::fs::read_to_string(&cli.template_file)
+        .map_err(|err| format!("Unreadable file: {} ({err})", cli.template_file.display()))?;
 
     let extracted = extract_tokens(&input).map_err(|err| format!("Invalid syntax: {err}"))?;
     if extracted.is_empty() {

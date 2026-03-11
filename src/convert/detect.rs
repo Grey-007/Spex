@@ -33,7 +33,9 @@ pub fn detect_template_system(tokens: &[ExtractedToken]) -> TemplateSystem {
 }
 
 fn has_any(tokens: &[ExtractedToken], needles: &[&str]) -> bool {
-    needles
-        .iter()
-        .all(|needle| tokens.iter().any(|t| t.normalized.eq_ignore_ascii_case(needle)))
+    needles.iter().all(|needle| {
+        tokens
+            .iter()
+            .any(|t| t.normalized.eq_ignore_ascii_case(needle))
+    })
 }
