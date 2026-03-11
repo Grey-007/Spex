@@ -1,5 +1,6 @@
 pub mod css;
 pub mod json;
+pub mod template;
 pub mod terminal;
 
 use std::io;
