@@ -6,8 +6,14 @@ const CONVERGENCE_EPSILON: f32 = 0.001;
 
 /// Extracts `k` dominant colors using k-means clustering in LAB space.
 pub fn extract_palette(pixels: &[Pixel], k: usize) -> Vec<Color> {
+    let (colors, _) = extract_palette_with_sizes(pixels, k);
+    colors
+}
+
+/// Extracts `k` dominant colors and cluster sizes using k-means clustering in LAB space.
+pub fn extract_palette_with_sizes(pixels: &[Pixel], k: usize) -> (Vec<Color>, Vec<usize>) {
     if pixels.is_empty() || k == 0 {
-        return Vec::new();
+        return (Vec::new(), Vec::new());
     }
 
     let points: Vec<[f32; 3]> = pixels.iter().map(pixel_to_lab).collect();
@@ -57,7 +63,17 @@ pub fn extract_palette(pixels: &[Pixel], k: usize) -> Vec<Color> {
         }
     }
 
-    centers.into_iter().map(lab_to_color).collect()
+    for (idx, point) in points.iter().enumerate() {
+        assignments[idx] = nearest_center(point, &centers);
+    }
+
+    let mut cluster_sizes = vec![0usize; cluster_count];
+    for &cluster_idx in &assignments {
+        cluster_sizes[cluster_idx] += 1;
+    }
+
+    let colors = centers.into_iter().map(lab_to_color).collect();
+    (colors, cluster_sizes)
 }
 
 fn init_centers(points: &[[f32; 3]], k: usize) -> Vec<[f32; 3]> {
