@@ -15,6 +15,7 @@ use crate::image::loader::load_image;
 use crate::models::theme::ThemeMode;
 use crate::palette::balance::balance_palette;
 use crate::palette::hue::enforce_hue_diversity;
+use crate::palette::roles::assign_roles;
 use crate::preview::terminal::print_palette;
 
 fn main() {
@@ -49,6 +50,18 @@ fn run() -> Result<(), Box<dyn Error>> {
     println!("Theme: {}", theme_name(theme));
     println!();
     print_palette(&palette);
+    println!();
+
+    let theme_palette = assign_roles(palette, theme);
+    println!("Theme palette:");
+    println!("background: {}", to_hex(theme_palette.background));
+    println!("surface:    {}", to_hex(theme_palette.surface));
+    println!("primary:    {}", to_hex(theme_palette.primary));
+    println!("secondary:  {}", to_hex(theme_palette.secondary));
+    println!("accent:     {}", to_hex(theme_palette.accent));
+    println!("accent2:    {}", to_hex(theme_palette.accent2));
+    println!("highlight:  {}", to_hex(theme_palette.highlight));
+    println!("text:       {}", to_hex(theme_palette.text));
 
     Ok(())
 }
@@ -121,6 +134,10 @@ fn theme_name(theme: ThemeMode) -> &'static str {
         ThemeMode::Dark => "dark",
         ThemeMode::Light => "light",
     }
+}
+
+fn to_hex(color: crate::models::color::Color) -> String {
+    format!("#{:02X}{:02X}{:02X}", color.r, color.g, color.b)
 }
 
 fn refill_palette(
