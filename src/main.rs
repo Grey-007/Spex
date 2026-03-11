@@ -12,15 +12,10 @@ use ::image::GenericImageView;
 use crate::extract::mediancut::extract_palette_mediancut;
 use crate::extract::sampler::sample_pixels;
 use crate::image::loader::load_image;
+use crate::models::theme::ThemeMode;
 use crate::palette::balance::balance_palette;
 use crate::palette::hue::enforce_hue_diversity;
 use crate::preview::terminal::print_palette;
-
-#[derive(Debug, Clone, Copy)]
-enum ThemeMode {
-    Dark,
-    Light,
-}
 
 fn main() {
     if let Err(err) = run() {
