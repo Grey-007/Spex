@@ -1,8 +1,10 @@
 use std::io;
+use std::path::PathBuf;
 
+use crate::export::export_file_path;
 use crate::palette::roles::ThemePalette;
 
-pub fn export_terminal(theme: &ThemePalette) -> io::Result<()> {
+pub fn export_terminal(theme: &ThemePalette) -> io::Result<PathBuf> {
     let content = format!(
         concat!(
             "background={}\n",
@@ -28,7 +30,9 @@ pub fn export_terminal(theme: &ThemePalette) -> io::Result<()> {
         to_hex(theme.text),
     );
 
-    std::fs::write("spex.term", content)
+    let path = export_file_path("spex.term")?;
+    std::fs::write(&path, content)?;
+    Ok(path)
 }
 
 fn to_hex(color: crate::models::color::Color) -> String {
