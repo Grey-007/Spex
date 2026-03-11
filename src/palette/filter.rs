@@ -5,6 +5,7 @@ use crate::models::color::Color;
 /// Vibrancy score:
 /// `score = cluster_size * saturation`
 /// where saturation comes from HSL (0.0..=1.0).
+#[allow(dead_code)]
 pub fn filter_palette(colors: Vec<Color>, cluster_sizes: Vec<usize>) -> Vec<Color> {
     let mut ranked: Vec<(Color, f32)> = colors
         .into_iter()
@@ -24,6 +25,7 @@ pub fn filter_palette(colors: Vec<Color>, cluster_sizes: Vec<usize>) -> Vec<Colo
     ranked.into_iter().map(|(color, _)| color).collect()
 }
 
+#[allow(dead_code)]
 fn rgb_saturation(color: Color) -> f32 {
     let r = color.r as f32 / 255.0;
     let g = color.g as f32 / 255.0;
