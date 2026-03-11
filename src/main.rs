@@ -32,7 +32,7 @@ fn run() -> Result<(), Box<dyn Error>> {
     let pixels = load_image(&path)?;
     let sampled_pixels = sample_pixels(&pixels, 100);
     let palette = extract_palette_mediancut(&sampled_pixels, colors);
-    let palette = balance_palette(palette);
+    let palette = balance_palette(palette, colors);
 
     println!("Image loaded");
     println!("Width: {width}");
