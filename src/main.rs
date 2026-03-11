@@ -1,4 +1,5 @@
 mod cli;
+mod color_engine;
 mod export;
 mod extract;
 mod image;
