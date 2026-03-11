@@ -1,13 +1,30 @@
-<h1 align="center">𝙨𝙥𝙚𝙭</h1>
+<p align="center">
+  <img alt="spex banner" src="https://capsule-render.vercel.app/api?type=rounded&height=220&color=0:ff8fab,50:ffb703,100:7bdff2&text=spex&fontSize=78&fontColor=ffffff&fontAlignY=42&animation=fadeIn">
+</p>
+
+<h1 align="center">SPEX</h1>
 <p align="center"><strong>Dynamic wallpaper color palette generator and theming engine.</strong></p>
+<p align="center"><em>(pronounced: spex)</em></p>
 
 <p align="center">
-  <img alt="Rust" src="https://img.shields.io/badge/Rust-Stable-FF6B00?style=for-the-badge">
-  <img alt="License" src="https://img.shields.io/badge/License-MIT-FFC300?style=for-the-badge">
-  <img alt="Version" src="https://img.shields.io/badge/Version-0.1.0-00E5FF?style=for-the-badge">
-  <img alt="Platform" src="https://img.shields.io/badge/Platform-Linux-39FF14?style=for-the-badge">
-  <img alt="CLI Tool" src="https://img.shields.io/badge/Type-CLI%20Tool-FF2D95?style=for-the-badge">
+  <img alt="License" src="https://img.shields.io/badge/License-MIT-FF5D8F?style=for-the-badge&logo=opensourceinitiative&logoColor=white">
+  <img alt="Crates" src="https://img.shields.io/badge/Crates.io-v0.1.0-00C2FF?style=for-the-badge&logo=rust&logoColor=white">
+  <img alt="Rust" src="https://img.shields.io/badge/Rust-Stable-FF8A00?style=for-the-badge&logo=rust&logoColor=white">
 </p>
+<p align="center">
+  <img alt="Platform" src="https://img.shields.io/badge/Platform-Linux-8DFF00?style=for-the-badge&logo=linux&logoColor=111111">
+  <img alt="CLI Tool" src="https://img.shields.io/badge/Type-CLI%20Tool-FFB703?style=for-the-badge&logo=gnubash&logoColor=111111">
+  <img alt="Templates" src="https://img.shields.io/badge/Templates-Enabled-7A5CFF?style=for-the-badge&logo=files&logoColor=white">
+</p>
+
+<p align="center">
+  <a href="#installation">Installation</a> ·
+  <a href="docs/cli.md">CLI</a> ·
+  <a href="docs/template_engine.md">Template Engine</a> ·
+  <a href="docs/transformations.md">Transforms</a>
+</p>
+
+<p align="center">〰️〰️〰️〰️〰️〰️〰️〰️〰️〰️〰️〰️〰️〰️〰️〰️</p>
 
 ## Preview
 
