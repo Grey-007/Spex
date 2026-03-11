@@ -94,7 +94,9 @@ fn run() -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-fn parse_args<I>(mut args: I) -> Result<(String, usize, ThemeMode, Option<ExportFormat>), Box<dyn Error>>
+fn parse_args<I>(
+    mut args: I,
+) -> Result<(String, usize, ThemeMode, Option<ExportFormat>), Box<dyn Error>>
 where
     I: Iterator<Item = String>,
 {
