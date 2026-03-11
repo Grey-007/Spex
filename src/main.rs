@@ -4,6 +4,7 @@ mod image;
 mod models;
 mod palette;
 mod preview;
+mod template;
 
 use std::env;
 use std::error::Error;
@@ -21,6 +22,7 @@ use crate::palette::balance::balance_palette;
 use crate::palette::hue::enforce_hue_diversity;
 use crate::palette::roles::assign_roles;
 use crate::preview::terminal::print_palette;
+use crate::template::engine::run_template_engine;
 
 fn main() {
     if let Err(err) = run() {
@@ -37,7 +39,7 @@ enum ExportFormat {
 }
 
 fn run() -> Result<(), Box<dyn Error>> {
-    let (path, colors, theme, export) = parse_args(env::args().skip(1))?;
+    let (path, colors, theme, export, dry_run) = parse_args(env::args().skip(1))?;
 
     // Open once for metadata that we print in this phase.
     let img = ::image::open(&path)?;
@@ -86,24 +88,27 @@ fn run() -> Result<(), Box<dyn Error>> {
         println!("{}", path.display());
     }
 
+    run_template_engine(&theme_palette, dry_run)?;
+
     Ok(())
 }
 
 fn parse_args<I>(
     mut args: I,
-) -> Result<(String, usize, ThemeMode, Option<ExportFormat>), Box<dyn Error>>
+) -> Result<(String, usize, ThemeMode, Option<ExportFormat>, bool), Box<dyn Error>>
 where
     I: Iterator<Item = String>,
 {
     let path = args
         .next()
         .ok_or(
-            "Usage: spex <image_path> [--colors <number>] [--theme <dark|light>] [--export <json|css|terminal>]",
+            "Usage: spex <image_path> [--colors <number>] [--theme <dark|light>] [--export <json|css|terminal>] [--dry-run]",
         )?;
 
     let mut colors = 8usize;
     let mut theme = ThemeMode::Dark;
     let mut export = None;
+    let mut dry_run = false;
     while let Some(arg) = args.next() {
         match arg.as_str() {
             "--colors" => {
@@ -127,13 +132,16 @@ where
                     .ok_or("Missing value for --export. Usage: --export <json|css|terminal>")?;
                 export = Some(parse_export(&value)?);
             }
+            "--dry-run" => {
+                dry_run = true;
+            }
             _ => {
                 return Err(format!("Unknown argument: {arg}").into());
             }
         }
     }
 
-    Ok((path, colors, theme, export))
+    Ok((path, colors, theme, export, dry_run))
 }
 
 fn parse_theme(value: &str) -> Result<ThemeMode, Box<dyn Error>> {
