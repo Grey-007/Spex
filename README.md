@@ -1,12 +1,13 @@
-# spex
+<h1 align="center">𝙨𝙥𝙚𝙭</h1>
+<p align="center"><strong>Dynamic wallpaper color palette generator and theming engine.</strong></p>
 
-Dynamic wallpaper color palette generator and theming engine.
-
-![Rust](https://img.shields.io/badge/rust-stable-ffb000)
-![License](https://img.shields.io/badge/license-MIT-ffb000)
-![Version](https://img.shields.io/badge/version-0.1.0-ffb000)
-![Platform](https://img.shields.io/badge/platform-linux-ffb000)
-![CLI Tool](https://img.shields.io/badge/type-CLI%20Tool-ffb000)
+<p align="center">
+  <img alt="Rust" src="https://img.shields.io/badge/Rust-Stable-FF6B00?style=for-the-badge">
+  <img alt="License" src="https://img.shields.io/badge/License-MIT-FFC300?style=for-the-badge">
+  <img alt="Version" src="https://img.shields.io/badge/Version-0.1.0-00E5FF?style=for-the-badge">
+  <img alt="Platform" src="https://img.shields.io/badge/Platform-Linux-39FF14?style=for-the-badge">
+  <img alt="CLI Tool" src="https://img.shields.io/badge/Type-CLI%20Tool-FF2D95?style=for-the-badge">
+</p>
 
 ## Preview
 
