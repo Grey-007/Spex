@@ -75,20 +75,15 @@ fn run() -> Result<(), Box<dyn Error>> {
     println!("text:       {}", to_hex(theme_palette.text));
 
     if let Some(format) = export {
-        match format {
-            ExportFormat::Json => {
-                export_json(&theme_palette)?;
-                println!("Exported: spex.json");
-            }
-            ExportFormat::Css => {
-                export_css(&theme_palette)?;
-                println!("Exported: spex.css");
-            }
-            ExportFormat::Terminal => {
-                export_terminal(&theme_palette)?;
-                println!("Exported: spex.term");
-            }
-        }
+        let path = match format {
+            ExportFormat::Json => export_json(&theme_palette)?,
+            ExportFormat::Css => export_css(&theme_palette)?,
+            ExportFormat::Terminal => export_terminal(&theme_palette)?,
+        };
+
+        println!();
+        println!("Exported palette to:");
+        println!("{}", path.display());
     }
 
     Ok(())
