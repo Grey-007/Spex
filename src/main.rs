@@ -13,6 +13,7 @@ use crate::extract::mediancut::extract_palette_mediancut;
 use crate::extract::sampler::sample_pixels;
 use crate::image::loader::load_image;
 use crate::palette::balance::balance_palette;
+use crate::palette::hue::enforce_hue_diversity;
 use crate::preview::terminal::print_palette;
 
 #[derive(Debug, Clone, Copy)]
@@ -37,8 +38,10 @@ fn run() -> Result<(), Box<dyn Error>> {
 
     let pixels = load_image(&path)?;
     let sampled_pixels = sample_pixels(&pixels, 100);
-    let palette = extract_palette_mediancut(&sampled_pixels, colors);
-    let palette = balance_palette(palette, colors);
+    let base_palette = extract_palette_mediancut(&sampled_pixels, colors);
+    let balanced_palette = balance_palette(base_palette, colors);
+    let mut palette = enforce_hue_diversity(balanced_palette.clone(), 20.0);
+    palette = refill_palette(palette, &balanced_palette, colors);
     let palette = order_palette_for_theme(palette, theme);
 
     println!("Image loaded");
@@ -123,4 +126,38 @@ fn theme_name(theme: ThemeMode) -> &'static str {
         ThemeMode::Dark => "dark",
         ThemeMode::Light => "light",
     }
+}
+
+fn refill_palette(
+    mut filtered: Vec<crate::models::color::Color>,
+    fallback: &[crate::models::color::Color],
+    k: usize,
+) -> Vec<crate::models::color::Color> {
+    if filtered.len() >= k {
+        filtered.truncate(k);
+        return filtered;
+    }
+
+    for color in fallback {
+        if filtered.len() >= k {
+            break;
+        }
+
+        if !filtered.contains(color) {
+            filtered.push(*color);
+        }
+    }
+
+    if filtered.is_empty() {
+        return filtered;
+    }
+
+    let mut idx = 0usize;
+    while filtered.len() < k {
+        let color = filtered[idx % filtered.len()];
+        filtered.push(color);
+        idx += 1;
+    }
+
+    filtered
 }
