@@ -20,9 +20,9 @@ pub fn balance_palette(colors: Vec<Color>) -> Vec<Color> {
 
     let mut hue_filtered: Vec<(Color, f32, f32, f32)> = Vec::new();
     for entry in entries {
-        let keep = hue_filtered
-            .iter()
-            .all(|(_, existing_hue, _, _)| hue_distance(entry.1, *existing_hue) >= MIN_HUE_DISTANCE);
+        let keep = hue_filtered.iter().all(|(_, existing_hue, _, _)| {
+            hue_distance(entry.1, *existing_hue) >= MIN_HUE_DISTANCE
+        });
         if keep {
             hue_filtered.push(entry);
         }
