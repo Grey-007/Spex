@@ -122,6 +122,30 @@ Generate shell completions:
 spex completions fish
 ```
 
+Diagnostics:
+
+```bash
+spex doctor
+```
+
+## Diagnostics
+
+Use `spex doctor` to validate your environment before running full template workflows.
+
+It checks:
+- config file availability and parse validity
+- template directories and template file readability
+- template token validity (including `colors.*` token paths)
+- hook command configuration (without executing hooks)
+- Spex Color Engine token generation
+- template rendering simulation with a mock palette
+
+Example:
+
+```bash
+spex doctor
+```
+
 ## Documentation
 
 Detailed docs are available in:

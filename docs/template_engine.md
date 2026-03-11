@@ -157,3 +157,32 @@ This allows sharing common template packs across systems.
 - Use `--dry-run` to preview rendered content safely.
 - Keep template files in version control when possible.
 - Prefer semantic variables (`{{background}}`, `{{text}}`) for stable theming across different palettes.
+
+## Template Validation and Diagnostics
+Spex includes `spex doctor` to validate template health before applying changes.
+
+Validation includes:
+- checking that configured template files exist and are readable
+- parsing template tokens
+- validating dynamic color-engine tokens like `{{colors.surface.default.hex}}`
+
+If an invalid token appears, Spex reports:
+- file path
+- line number
+- offending token
+- suggested role names
+
+Example error:
+
+```text
+[ERROR] Invalid template token
+
+File: ~/.config/spex/templates/vscode.json
+Line: 42
+
+Unknown token: surface_ultra_high
+
+Did you mean:
+surface_container_high
+surface_container_highest
+```

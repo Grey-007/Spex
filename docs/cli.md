@@ -30,6 +30,7 @@ Supported subcommands:
 - `daemon`
 - `completions`
 - `config`
+- `doctor`
 
 ## 3. Commands
 
@@ -70,6 +71,35 @@ Print resolved config path information (default and optional override).
 ```bash
 spex config
 spex config --config ~/.config/spex/config.toml
+```
+
+### `doctor`
+Run diagnostics for config, templates, hooks, and color engine.
+
+```bash
+spex doctor
+```
+
+Doctor checks:
+- config file presence and parse validity
+- template directory/file readability
+- token validation for `colors.*` template tokens
+- hook configuration validity (without execution)
+- color engine token generation
+- simulated template rendering
+
+Example doctor output:
+
+```text
+Running spex diagnostics...
+
+[OK] Config file found
+[OK] Template directories valid
+[OK] Template syntax valid
+[OK] Color engine working
+[OK] Hooks configured
+
+All checks passed.
 ```
 
 ## 4. Global Options

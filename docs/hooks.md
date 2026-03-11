@@ -72,3 +72,14 @@ Result:
 - Add more hooks gradually.
 - Keep hooks idempotent where possible (safe to run repeatedly).
 - Use `--dry-run` to validate template output without triggering hooks.
+
+## Hook Validation in `spex doctor`
+`spex doctor` validates hooks without executing them.
+
+Checks performed:
+- command string is not empty
+- shell executable (`sh`) is available in `PATH`
+
+Important:
+- doctor mode never runs hook commands
+- this keeps diagnostics safe and side-effect free
