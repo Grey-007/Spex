@@ -1,54 +1,37 @@
 use crate::models::color::Color;
 
-const MIN_HUE_DISTANCE: f32 = 20.0;
-const DARK_LUMINANCE_THRESHOLD: f32 = 0.2;
+const MIN_SATURATION_THRESHOLD: f32 = 0.05;
 
-pub fn balance_palette(colors: Vec<Color>) -> Vec<Color> {
-    if colors.is_empty() {
-        return colors;
+pub fn balance_palette(colors: Vec<Color>, k: usize) -> Vec<Color> {
+    if colors.is_empty() || k == 0 {
+        return Vec::new();
     }
 
-    let mut entries: Vec<(Color, f32, f32, f32)> = colors
+    let original = colors.clone();
+    let mut scored: Vec<(Color, f32)> = colors
         .into_iter()
         .map(|color| {
-            let (hue, saturation, luminance) = rgb_to_hsl(color);
-            (color, hue, saturation, luminance)
+            let (_, saturation, luminance) = rgb_to_hsl(color);
+            let score = saturation * 0.7 + luminance * 0.3;
+            (color, score)
+        })
+        .filter(|(color, _)| {
+            let (_, saturation, _) = rgb_to_hsl(*color);
+            saturation >= MIN_SATURATION_THRESHOLD
         })
         .collect();
 
-    entries.sort_by(|a, b| b.2.total_cmp(&a.2));
+    scored.sort_by(|a, b| b.1.total_cmp(&a.1));
 
-    let mut hue_filtered: Vec<(Color, f32, f32, f32)> = Vec::new();
-    for entry in entries {
-        let keep = hue_filtered.iter().all(|(_, existing_hue, _, _)| {
-            hue_distance(entry.1, *existing_hue) >= MIN_HUE_DISTANCE
-        });
-        if keep {
-            hue_filtered.push(entry);
-        }
+    if scored.len() < k {
+        return fill_to_k(original, k);
     }
 
-    let dark_limit = ((hue_filtered.len() + 3) / 4).max(1);
-    let mut dark_count = 0usize;
-    let mut balanced = Vec::new();
-
-    for (color, _, _, luminance) in hue_filtered {
-        if luminance < DARK_LUMINANCE_THRESHOLD {
-            if dark_count >= dark_limit {
-                continue;
-            }
-            dark_count += 1;
-        }
-
-        balanced.push(color);
-    }
-
-    balanced
-}
-
-fn hue_distance(a: f32, b: f32) -> f32 {
-    let diff = (a - b).abs();
-    diff.min(360.0 - diff)
+    scored
+        .into_iter()
+        .take(k)
+        .map(|(color, _)| color)
+        .collect()
 }
 
 fn rgb_to_hsl(color: Color) -> (f32, f32, f32) {
@@ -77,4 +60,24 @@ fn rgb_to_hsl(color: Color) -> (f32, f32, f32) {
 
     let hue = hue_base * 60.0;
     (hue, saturation, luminance)
+}
+
+fn fill_to_k(mut colors: Vec<Color>, k: usize) -> Vec<Color> {
+    if colors.is_empty() {
+        return colors;
+    }
+
+    if colors.len() >= k {
+        colors.truncate(k);
+        return colors;
+    }
+
+    let base = colors.clone();
+    let mut idx = 0usize;
+    while colors.len() < k {
+        colors.push(base[idx % base.len()]);
+        idx += 1;
+    }
+
+    colors
 }
