@@ -1,3 +1,4 @@
+mod export;
 mod extract;
 mod image;
 mod models;
@@ -9,6 +10,9 @@ use std::error::Error;
 
 use ::image::GenericImageView;
 
+use crate::export::css::export_css;
+use crate::export::json::export_json;
+use crate::export::terminal::export_terminal;
 use crate::extract::mediancut::extract_palette_mediancut;
 use crate::extract::sampler::sample_pixels;
 use crate::image::loader::load_image;
@@ -25,8 +29,15 @@ fn main() {
     }
 }
 
+#[derive(Debug, Clone, Copy)]
+enum ExportFormat {
+    Json,
+    Css,
+    Terminal,
+}
+
 fn run() -> Result<(), Box<dyn Error>> {
-    let (path, colors, theme) = parse_args(env::args().skip(1))?;
+    let (path, colors, theme, export) = parse_args(env::args().skip(1))?;
 
     // Open once for metadata that we print in this phase.
     let img = ::image::open(&path)?;
@@ -63,19 +74,39 @@ fn run() -> Result<(), Box<dyn Error>> {
     println!("highlight:  {}", to_hex(theme_palette.highlight));
     println!("text:       {}", to_hex(theme_palette.text));
 
+    if let Some(format) = export {
+        match format {
+            ExportFormat::Json => {
+                export_json(&theme_palette)?;
+                println!("Exported: spex.json");
+            }
+            ExportFormat::Css => {
+                export_css(&theme_palette)?;
+                println!("Exported: spex.css");
+            }
+            ExportFormat::Terminal => {
+                export_terminal(&theme_palette)?;
+                println!("Exported: spex.term");
+            }
+        }
+    }
+
     Ok(())
 }
 
-fn parse_args<I>(mut args: I) -> Result<(String, usize, ThemeMode), Box<dyn Error>>
+fn parse_args<I>(mut args: I) -> Result<(String, usize, ThemeMode, Option<ExportFormat>), Box<dyn Error>>
 where
     I: Iterator<Item = String>,
 {
     let path = args
         .next()
-        .ok_or("Usage: spex <image_path> [--colors <number>] [--theme <dark|light>]")?;
+        .ok_or(
+            "Usage: spex <image_path> [--colors <number>] [--theme <dark|light>] [--export <json|css|terminal>]",
+        )?;
 
     let mut colors = 8usize;
     let mut theme = ThemeMode::Dark;
+    let mut export = None;
     while let Some(arg) = args.next() {
         match arg.as_str() {
             "--colors" => {
@@ -93,13 +124,19 @@ where
                     .ok_or("Missing value for --theme. Usage: --theme <dark|light>")?;
                 theme = parse_theme(&value)?;
             }
+            "--export" => {
+                let value = args
+                    .next()
+                    .ok_or("Missing value for --export. Usage: --export <json|css|terminal>")?;
+                export = Some(parse_export(&value)?);
+            }
             _ => {
                 return Err(format!("Unknown argument: {arg}").into());
             }
         }
     }
 
-    Ok((path, colors, theme))
+    Ok((path, colors, theme, export))
 }
 
 fn parse_theme(value: &str) -> Result<ThemeMode, Box<dyn Error>> {
@@ -107,6 +144,15 @@ fn parse_theme(value: &str) -> Result<ThemeMode, Box<dyn Error>> {
         "dark" => Ok(ThemeMode::Dark),
         "light" => Ok(ThemeMode::Light),
         _ => Err(format!("Invalid theme '{value}'. Expected: dark or light").into()),
+    }
+}
+
+fn parse_export(value: &str) -> Result<ExportFormat, Box<dyn Error>> {
+    match value {
+        "json" => Ok(ExportFormat::Json),
+        "css" => Ok(ExportFormat::Css),
+        "terminal" => Ok(ExportFormat::Terminal),
+        _ => Err(format!("Invalid export format '{value}'. Expected: json, css, terminal").into()),
     }
 }
 
