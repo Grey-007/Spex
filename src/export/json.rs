@@ -6,20 +6,18 @@ use crate::export::template::render_template;
 use crate::palette::roles::ThemePalette;
 
 pub fn export_json(theme: &ThemePalette) -> io::Result<PathBuf> {
-    let mut template = String::from(
-        concat!(
-            "{\n",
-            "  \"background\": \"{{background}}\",\n",
-            "  \"surface\": \"{{surface}}\",\n",
-            "  \"primary\": \"{{primary}}\",\n",
-            "  \"secondary\": \"{{secondary}}\",\n",
-            "  \"accent\": \"{{accent}}\",\n",
-            "  \"accent2\": \"{{accent2}}\",\n",
-            "  \"highlight\": \"{{highlight}}\",\n",
-            "  \"text\": \"{{text}}\",\n",
-            "  \"colors\": [\n"
-        ),
-    );
+    let mut template = String::from(concat!(
+        "{\n",
+        "  \"background\": \"{{background}}\",\n",
+        "  \"surface\": \"{{surface}}\",\n",
+        "  \"primary\": \"{{primary}}\",\n",
+        "  \"secondary\": \"{{secondary}}\",\n",
+        "  \"accent\": \"{{accent}}\",\n",
+        "  \"accent2\": \"{{accent2}}\",\n",
+        "  \"highlight\": \"{{highlight}}\",\n",
+        "  \"text\": \"{{text}}\",\n",
+        "  \"colors\": [\n"
+    ));
 
     for (idx, _) in theme.colors.iter().enumerate() {
         if idx > 0 {
