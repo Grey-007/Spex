@@ -5,6 +5,7 @@ const MAX_ITERATIONS: usize = 25;
 const CONVERGENCE_EPSILON: f32 = 0.001;
 
 /// Extracts `k` dominant colors using k-means clustering in LAB space.
+#[allow(dead_code)]
 pub fn extract_palette(pixels: &[Pixel], k: usize) -> Vec<Color> {
     let (colors, _) = extract_palette_with_sizes(pixels, k);
     colors
