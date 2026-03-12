@@ -57,13 +57,17 @@ Examples:
 - tokens like `$background` -> CSS-variable style
 
 ## Semantic Classification
-Known aliases are mapped into semantic categories.
+Known aliases are mapped into semantic categories/roles.
 
 Examples:
 - `background`, `bg`, `base_bg` -> `background`
-- `foreground`, `fg`, `text` -> `foreground`
+- `foreground`, `fg`, `text`, `on_surface` -> `foreground`
 - `primary`, `accent`, `main` -> `primary`
-- `color0..color15` -> `palette0..palette15`
+- `primary_bg` -> `primary_container`
+- `danger`, `alert` -> `error`
+- `surface_high` -> `surface_container_high`
+- `on_surface_variant` -> `surface_variant`
+- `color0..color255` and `palette0..palette255` -> `color0..color255`
 
 ## Fuzzy Matching
 If token names are slightly different, fuzzy matching attempts a best-fit classification.
@@ -74,17 +78,17 @@ Methods:
 - Levenshtein distance threshold
 
 Examples:
-- `base_bg` -> background
 - `mainColor` -> primary
+- `secondarycontainer` -> secondary_container
+- `outline-alt` -> outline_variant
 
 ## Mapping to Spex Tokens
 Mapped outputs include:
 - `background` -> `{{colors.background.default.hex}}`
-- `foreground` -> `{{colors.foreground.default.hex}}`
-- `primary` -> `{{colors.primary.default.hex}}`
-- `secondary` -> `{{colors.secondary.default.hex}}`
+- `primary_container` -> `{{colors.primary_container.default.hex}}`
+- `on_error` -> `{{colors.on_error.default.hex}}`
+- `surface_container_high` -> `{{colors.surface_container_high.default.hex}}`
 - `palette0` -> `{{color0}}`
-- `palette1` -> `{{color1}}`
 
 ## Analyze Mode
 Use analyze mode for inspection without rewriting files:
@@ -105,17 +109,17 @@ Example output:
 Detected tokens:
 
 background
-foreground
+on_primary
+surface_high
 color0
-color1
 accent
 
 Suggested mappings:
 
 background -> colors.background.default.hex
-foreground -> colors.foreground.default.hex
+on_primary -> colors.on_primary.default.hex
+surface_high -> colors.surface_container_high.default.hex
 color0 -> color0
-color1 -> color1
 accent -> colors.primary.default.hex
 ```
 
@@ -153,4 +157,4 @@ spex-convert theme.css --output converted.css
 - regex extraction/syntax problems
 - unknown tokens (reported, conversion continues)
 
-The tool stays lightweight and uses simple regex + mapping logic for compatibility with spex templates.
+The tool stays lightweight and uses regex + semantic mapping for compatibility with spex templates.

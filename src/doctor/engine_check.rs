@@ -11,7 +11,7 @@ pub fn check_color_engine() -> usize {
     let inferred = infer_theme_from_palette(&palette);
     let inferred_tokens = build_tokens(palette, inferred);
 
-    for required in ["background", "surface", "primary", "secondary"] {
+    for &required in required_tokens() {
         if !dark_tokens.colors.contains_key(required) {
             println!("[ERROR] Color engine missing required token in dark theme: {required}");
             issues += 1;
@@ -31,6 +31,40 @@ pub fn check_color_engine() -> usize {
     }
 
     issues
+}
+
+fn required_tokens() -> &'static [&'static str] {
+    &[
+        "background",
+        "foreground",
+        "primary",
+        "primary_container",
+        "on_primary",
+        "on_primary_container",
+        "secondary",
+        "secondary_container",
+        "on_secondary",
+        "on_secondary_container",
+        "tertiary",
+        "tertiary_container",
+        "on_tertiary",
+        "on_tertiary_container",
+        "error",
+        "error_container",
+        "on_error",
+        "on_error_container",
+        "surface",
+        "surface_variant",
+        "surface_container",
+        "surface_container_low",
+        "surface_container_high",
+        "surface_container_highest",
+        "outline",
+        "outline_variant",
+        "border",
+        "highlight",
+        "selection",
+    ]
 }
 
 pub fn mock_palette() -> Vec<Color> {
