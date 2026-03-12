@@ -40,8 +40,14 @@ spex-convert theme.css --output converted.css
 Extractor supports:
 - `{token}`
 - `{{token}}`
+- `{{{token}}}` and deeper nested braces
 - `${token}`
 - `$token`
+
+Matugen compatibility:
+- `spex-convert` accepts tokens wrapped by any number of braces
+- example: `{{{{{{colors.outline.default.hex}}}}}}`
+- nested Matugen forms are normalized to canonical Spex form: `{{colors.<role>.hex}}`
 
 Normalization examples:
 - `{background}` -> `background`
@@ -89,6 +95,12 @@ Mapped outputs include:
 - `on_error` -> `{{colors.on_error.default.hex}}`
 - `surface_container_high` -> `{{colors.surface_container_high.default.hex}}`
 - `palette0` -> `{{color0}}`
+
+Matugen normalization:
+- `colors.<role>.default.hex` -> `colors.<role>.hex`
+- `{{{colors.primary.default.hex}}}` -> `{{colors.primary.hex}}`
+- `{{{{colors.background.default.hex}}}}` -> `{{colors.background.hex}}`
+- `{{{{{{colors.outline.default.hex}}}}}}` -> `{{colors.outline.hex}}`
 
 ## Analyze Mode
 Use analyze mode for inspection without rewriting files:
