@@ -8,6 +8,7 @@ pub struct ExtractedToken {
 }
 
 pub fn extract_tokens(input: &str) -> Result<Vec<ExtractedToken>, regex::Error> {
+    let nested_matugen = Regex::new(r"\{+\s*(colors\.[A-Za-z0-9_\.]+)\s*\}+")?;
     let brace2 = Regex::new(r"\{\{\s*([^{}]+?)\s*\}\}")?;
     let brace1 = Regex::new(r"\{([^{}\n]+?)\}")?;
     let dollar_brace = Regex::new(r"\$\{([^{}\n]+?)\}")?;
@@ -16,6 +17,7 @@ pub fn extract_tokens(input: &str) -> Result<Vec<ExtractedToken>, regex::Error> 
     let mut out = Vec::new();
     for (idx, line) in input.lines().enumerate() {
         let line_no = idx + 1;
+        collect_matches(&nested_matugen, line, line_no, &mut out);
         collect_matches(&brace2, line, line_no, &mut out);
         collect_matches(&dollar_brace, line, line_no, &mut out);
         collect_matches(&brace1, line, line_no, &mut out);
