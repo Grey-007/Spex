@@ -1,5 +1,5 @@
 <p align="center">
-  <img alt="spex banner" src="https://capsule-render.vercel.app/api?type=rounded&height=220&color=0:ff8fab,50:ffb703,100:7bdff2&text=spex&fontSize=78&fontColor=ffffff&fontAlignY=42&animation=fadeIn">
+  <img alt="spex banner" src="assets/spexbanner.png">
 </p>
 
 <h1 align="center">SPEX</h1>
