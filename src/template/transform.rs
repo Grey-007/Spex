@@ -1,15 +1,19 @@
 use crate::color_engine::derive::{darken, lighten, rgb_to_hsl};
 use crate::color_engine::engine::{build_tokens, infer_theme_from_palette};
-use crate::color_engine::format::resolve_token_path;
 use crate::models::color::Color;
 use crate::palette::roles::ThemePalette;
 
-pub fn resolve_token(token: &str, palette: &ThemePalette) -> Option<String> {
+const MIN_BACKGROUND_DELTA_E: f32 = 8.0;
+
+pub fn resolve_token(token: &str, palette: &ThemePalette, debug_theme: bool) -> Option<String> {
     if token.starts_with("colors.") {
-        let inferred_theme = infer_theme_from_palette(&palette.colors);
-        let tokens = build_tokens(palette.colors.clone(), inferred_theme);
-        if let Some(value) = resolve_token_path(&tokens, token) {
-            return Some(value);
+        if let Some(resolution) = resolve_color_token(token, palette) {
+            if debug_theme {
+                println!("Template variable: {token}");
+                println!("Resolved role: {}", resolution.resolved_role);
+                println!("Color: {}", to_hex(resolution.color));
+            }
+            return Some(resolution.formatted);
         }
     }
 
@@ -48,6 +52,182 @@ pub fn resolve_token(token: &str, palette: &ThemePalette) -> Option<String> {
     None
 }
 
+struct ColorTokenResolution {
+    resolved_role: String,
+    color: Color,
+    formatted: String,
+}
+
+fn resolve_color_token(token: &str, palette: &ThemePalette) -> Option<ColorTokenResolution> {
+    let path = token.strip_prefix("colors.")?;
+    let (role, format) = split_role_and_format(path)?;
+
+    if let Some((resolved_role, role_color)) = resolve_theme_color(role, palette) {
+        let adjusted = enforce_background_separation(&resolved_role, role_color, palette);
+        return format_color(adjusted, format).map(|formatted| ColorTokenResolution {
+            resolved_role,
+            color: adjusted,
+            formatted,
+        });
+    }
+
+    let inferred_theme = infer_theme_from_palette(&palette.colors);
+    let tokens = build_tokens(palette.colors.clone(), inferred_theme);
+    let role_color = tokens.colors.get(role).copied()?;
+    let adjusted = enforce_background_separation(role, role_color, palette);
+    format_color(adjusted, format).map(|formatted| ColorTokenResolution {
+        resolved_role: role.to_string(),
+        color: adjusted,
+        formatted,
+    })
+}
+
+fn split_role_and_format(path: &str) -> Option<(&str, &str)> {
+    if let Some(split) = path.rsplit_once(".default.") {
+        return Some(split);
+    }
+
+    path.rsplit_once('.')
+}
+
+fn resolve_theme_color(role: &str, palette: &ThemePalette) -> Option<(String, Color)> {
+    if let Some(color) = exact_theme_color(role, palette) {
+        return Some((role.to_string(), color));
+    }
+
+    let fallback_role = fallback_role(role)?;
+    exact_theme_color(fallback_role, palette).map(|color| (fallback_role.to_string(), color))
+}
+
+fn exact_theme_color(role: &str, palette: &ThemePalette) -> Option<Color> {
+    match role {
+        "background" => Some(palette.background),
+        "surface" => Some(palette.surface),
+        "primary" => Some(palette.primary),
+        "secondary" => Some(palette.secondary),
+        "accent" => Some(palette.accent),
+        "accent2" => Some(palette.accent2),
+        "highlight" => Some(palette.highlight),
+        "text" => Some(palette.text),
+        _ => None,
+    }
+}
+
+fn fallback_role(role: &str) -> Option<&'static str> {
+    match role {
+        "accent2" => Some("accent"),
+        "surface" => Some("background"),
+        "secondary" => Some("primary"),
+        _ => None,
+    }
+}
+
+fn format_color(color: Color, format: &str) -> Option<String> {
+    match format {
+        "hex" => Some(to_hex(color)),
+        "rgb" => Some(format!("{}, {}, {}", color.r, color.g, color.b)),
+        "rgba" => Some(format!("rgba({}, {}, {}, 1.00)", color.r, color.g, color.b)),
+        "hsl" => {
+            let (h, s, l) = rgb_to_hsl(color);
+            Some(format!(
+                "hsl({:.0}, {:.0}%, {:.0}%)",
+                h,
+                s * 100.0,
+                l * 100.0
+            ))
+        }
+        _ if format.starts_with("rgba(") && format.ends_with(')') => {
+            let alpha = &format["rgba(".len()..format.len() - 1];
+            let alpha = alpha.parse::<f32>().ok()?.clamp(0.0, 1.0);
+            Some(format!(
+                "rgba({}, {}, {}, {:.2})",
+                color.r, color.g, color.b, alpha
+            ))
+        }
+        _ => None,
+    }
+}
+
+fn enforce_background_separation(role: &str, color: Color, palette: &ThemePalette) -> Color {
+    if role == "background" {
+        return color;
+    }
+
+    let background = palette.background;
+    let distance = delta_e(color, background);
+    if distance >= MIN_BACKGROUND_DELTA_E {
+        return color;
+    }
+
+    palette
+        .colors
+        .iter()
+        .copied()
+        .filter(|candidate| *candidate != color)
+        .filter(|candidate| delta_e(*candidate, background) >= MIN_BACKGROUND_DELTA_E)
+        .min_by(|a, b| delta_e(*a, color).total_cmp(&delta_e(*b, color)))
+        .unwrap_or(color)
+}
+
+fn delta_e(a: Color, b: Color) -> f32 {
+    let (al, aa, ab) = rgb_to_lab(a);
+    let (bl, ba, bb) = rgb_to_lab(b);
+    let dl = al - bl;
+    let da = aa - ba;
+    let db = ab - bb;
+    (dl * dl + da * da + db * db).sqrt()
+}
+
+fn rgb_to_lab(color: Color) -> (f32, f32, f32) {
+    let r = srgb_to_linear(color.r as f32 / 255.0);
+    let g = srgb_to_linear(color.g as f32 / 255.0);
+    let b = srgb_to_linear(color.b as f32 / 255.0);
+
+    let x = (0.412_456_4 * r) + (0.357_576_1 * g) + (0.180_437_5 * b);
+    let y = (0.212_672_9 * r) + (0.715_152_2 * g) + (0.072_175 * b);
+    let z = (0.019_333_9 * r) + (0.119_192 * g) + (0.950_304_1 * b);
+
+    xyz_to_lab(x, y, z)
+}
+
+fn srgb_to_linear(c: f32) -> f32 {
+    if c <= 0.04045 {
+        c / 12.92
+    } else {
+        ((c + 0.055) / 1.055).powf(2.4)
+    }
+}
+
+fn xyz_to_lab(x: f32, y: f32, z: f32) -> (f32, f32, f32) {
+    const XN: f32 = 0.950_47;
+    const YN: f32 = 1.0;
+    const ZN: f32 = 1.088_83;
+    const EPSILON: f32 = 216.0 / 24_389.0;
+    const KAPPA: f32 = 24_389.0 / 27.0;
+
+    let xr = x / XN;
+    let yr = y / YN;
+    let zr = z / ZN;
+
+    let fx = f_lab(xr, EPSILON, KAPPA);
+    let fy = f_lab(yr, EPSILON, KAPPA);
+    let fz = f_lab(zr, EPSILON, KAPPA);
+
+    let l = (116.0 * fy) - 16.0;
+    let a = 500.0 * (fx - fy);
+    let b = 200.0 * (fy - fz);
+
+    (l, a, b)
+}
+
+fn f_lab(t: f32, epsilon: f32, kappa: f32) -> f32 {
+    if t > epsilon {
+        t.cbrt()
+    } else {
+        (kappa * t + 16.0) / 116.0
+    }
+}
+
 fn split_call<'a>(token: &'a str, marker: &str) -> Option<(&'a str, &'a str)> {
     let start = token.find(marker)?;
     if !token.ends_with(')') {
@@ -79,4 +259,136 @@ fn get_color(name: &str, palette: &ThemePalette) -> Option<Color> {
 
 fn to_hex(color: Color) -> String {
     format!("#{:02X}{:02X}{:02X}", color.r, color.g, color.b)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::resolve_token;
+    use crate::models::color::Color;
+    use crate::palette::roles::ThemePalette;
+
+    #[test]
+    fn colors_surface_hex_uses_theme_surface_role() {
+        let palette = sample_palette();
+        let resolved = resolve_token("colors.surface.hex", &palette, false).unwrap();
+        assert_eq!(resolved, "#102030");
+    }
+
+    #[test]
+    fn colors_secondary_hex_uses_theme_secondary_role() {
+        let palette = sample_palette();
+        let resolved = resolve_token("colors.secondary.hex", &palette, false).unwrap();
+        assert_eq!(resolved, "#506070");
+    }
+
+    #[test]
+    fn colors_surface_hex_adjusts_if_too_close_to_background() {
+        let mut palette = sample_palette();
+        palette.background = Color {
+            r: 10,
+            g: 10,
+            b: 10,
+        };
+        palette.surface = Color {
+            r: 11,
+            g: 11,
+            b: 11,
+        };
+        palette.colors = vec![
+            palette.background,
+            palette.surface,
+            Color {
+                r: 24,
+                g: 24,
+                b: 24,
+            },
+            Color {
+                r: 60,
+                g: 65,
+                b: 75,
+            },
+        ];
+
+        let resolved = resolve_token("colors.surface.hex", &palette, false).unwrap();
+        assert_eq!(resolved, "#3C414B");
+    }
+
+    fn sample_palette() -> ThemePalette {
+        ThemePalette {
+            background: Color { r: 5, g: 8, b: 14 },
+            surface: Color {
+                r: 16,
+                g: 32,
+                b: 48,
+            },
+            primary: Color {
+                r: 32,
+                g: 64,
+                b: 96,
+            },
+            secondary: Color {
+                r: 80,
+                g: 96,
+                b: 112,
+            },
+            accent: Color {
+                r: 120,
+                g: 80,
+                b: 40,
+            },
+            accent2: Color {
+                r: 140,
+                g: 110,
+                b: 75,
+            },
+            highlight: Color {
+                r: 220,
+                g: 180,
+                b: 120,
+            },
+            text: Color {
+                r: 230,
+                g: 235,
+                b: 240,
+            },
+            colors: vec![
+                Color { r: 5, g: 8, b: 14 },
+                Color {
+                    r: 16,
+                    g: 32,
+                    b: 48,
+                },
+                Color {
+                    r: 32,
+                    g: 64,
+                    b: 96,
+                },
+                Color {
+                    r: 80,
+                    g: 96,
+                    b: 112,
+                },
+                Color {
+                    r: 120,
+                    g: 80,
+                    b: 40,
+                },
+                Color {
+                    r: 140,
+                    g: 110,
+                    b: 75,
+                },
+                Color {
+                    r: 220,
+                    g: 180,
+                    b: 120,
+                },
+                Color {
+                    r: 230,
+                    g: 235,
+                    b: 240,
+                },
+            ],
+        }
+    }
 }
