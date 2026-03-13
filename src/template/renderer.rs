@@ -3,7 +3,7 @@ use crate::palette::roles::ThemePalette;
 use super::loops::render_color_loops;
 use super::transform::resolve_token;
 
-pub fn render(input: &str, palette: &ThemePalette) -> String {
+pub fn render(input: &str, palette: &ThemePalette, debug_theme: bool) -> String {
     let looped = render_color_loops(input, &palette.colors);
 
     let mut output = String::with_capacity(looped.len());
@@ -22,7 +22,7 @@ pub fn render(input: &str, palette: &ThemePalette) -> String {
         let token = &looped[start + 2..end];
         let original = &looped[start..end + 2];
 
-        if let Some(replacement) = resolve_token(token.trim(), palette) {
+        if let Some(replacement) = resolve_token(token.trim(), palette, debug_theme) {
             output.push_str(&replacement);
         } else {
             output.push_str(original);
