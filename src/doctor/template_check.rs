@@ -4,9 +4,11 @@ use std::path::PathBuf;
 
 use crate::color_engine::engine::{build_tokens, infer_theme_from_palette};
 use crate::color_engine::format::resolve_token_path;
+use crate::models::theme::ThemeMode;
 use crate::palette::roles::assign_roles;
 use crate::template::config::{TemplateConfig, expand_tilde};
 use crate::template::renderer::render;
+use crate::template::transform::resolve_token;
 
 use super::engine_check::mock_palette;
 
@@ -118,6 +120,7 @@ fn check_template_syntax(files: &HashSet<PathBuf>) -> io::Result<usize> {
     let palette = mock_palette();
     let theme = infer_theme_from_palette(&palette);
     let tokens = build_tokens(palette, theme);
+    let theme_palette = assign_roles(mock_palette(), ThemeMode::Dark);
     let mut known_roles: Vec<&str> = tokens.colors.keys().map(|s| s.as_str()).collect();
     known_roles.sort_unstable();
 
@@ -129,7 +132,10 @@ fn check_template_syntax(files: &HashSet<PathBuf>) -> io::Result<usize> {
                     continue;
                 }
 
-                if token.starts_with("colors.") && resolve_token_path(&tokens, token).is_none() {
+                if token.starts_with("colors.")
+                    && resolve_token_path(&tokens, token).is_none()
+                    && resolve_token(token, &theme_palette, false).is_none()
+                {
                     issues += 1;
                     let unknown_role = extract_role_name(token).unwrap_or("unknown");
                     println!("[ERROR] Invalid template token");
@@ -166,7 +172,7 @@ fn check_template_rendering(files: &HashSet<PathBuf>) -> io::Result<usize> {
 
     for file in files {
         let text = std::fs::read_to_string(file)?;
-        let rendered = std::panic::catch_unwind(|| render(&text, &theme_palette));
+        let rendered = std::panic::catch_unwind(|| render(&text, &theme_palette, false));
         if rendered.is_err() {
             println!("[ERROR] Template rendering failed");
             println!("File: {}", file.display());
