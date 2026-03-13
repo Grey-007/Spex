@@ -39,6 +39,10 @@ pub struct Cli {
     #[arg(long, global = true, action = ArgAction::SetTrue)]
     pub verbose: bool,
 
+    /// Print template semantic role resolution during rendering
+    #[arg(long, global = true, action = ArgAction::SetTrue)]
+    pub debug_theme: bool,
+
     /// Disable terminal palette preview output
     #[arg(long, global = true, action = ArgAction::SetTrue)]
     pub no_preview: bool,
