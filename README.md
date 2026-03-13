@@ -106,6 +106,29 @@ Template variable examples:
 {{background}}
 {{primary}}
 {{accent}}
+{{colors.surface.hex}}
+```
+
+`colors.*` semantic role tokens are stable and map directly to generated theme roles:
+
+- `colors.background` -> `theme.background`
+- `colors.surface` -> `theme.surface`
+- `colors.primary` -> `theme.primary`
+- `colors.secondary` -> `theme.secondary`
+- `colors.accent` -> `theme.accent`
+- `colors.accent2` -> `theme.accent2`
+- `colors.highlight` -> `theme.highlight`
+- `colors.text` -> `theme.text`
+
+Role fallback is only used when a requested role is missing:
+- `accent2` -> `accent`
+- `surface` -> `background`
+- `secondary` -> `primary`
+
+For troubleshooting template role resolution, run with:
+
+```bash
+spex generate wallpaper.jpg --debug-theme
 ```
 
 ## Theme Derivation
