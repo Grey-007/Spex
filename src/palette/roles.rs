@@ -1,6 +1,8 @@
 use crate::models::color::Color;
 use crate::models::theme::ThemeMode;
 
+const DARK_THEME_BACKGROUND_SCALE: f32 = 0.94;
+
 pub struct ThemePalette {
     pub background: Color,
     pub surface: Color,
@@ -69,7 +71,7 @@ pub fn assign_roles(colors: Vec<Color>, theme: ThemeMode) -> ThemePalette {
         select_highest_contrast_index(&entries, background, &used).unwrap_or(text_idx);
 
     ThemePalette {
-        background: background.color,
+        background: adjust_background_for_theme(background.color, theme),
         surface: surface.color,
         primary: entries[primary_idx].color,
         secondary: entries[secondary_idx].color,
@@ -78,6 +80,17 @@ pub fn assign_roles(colors: Vec<Color>, theme: ThemeMode) -> ThemePalette {
         highlight: entries[highlight_idx].color,
         text: entries[text_idx].color,
         colors: ordered_palette,
+    }
+}
+
+fn adjust_background_for_theme(background: Color, theme: ThemeMode) -> Color {
+    match theme {
+        ThemeMode::Dark => Color {
+            r: (background.r as f32 * DARK_THEME_BACKGROUND_SCALE).round() as u8,
+            g: (background.g as f32 * DARK_THEME_BACKGROUND_SCALE).round() as u8,
+            b: (background.b as f32 * DARK_THEME_BACKGROUND_SCALE).round() as u8,
+        },
+        ThemeMode::Light => background,
     }
 }
 
