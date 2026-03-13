@@ -90,6 +90,10 @@ Supported formats:
 - `rgba(alpha)`
 - `hsl`
 
+Renderer stability note:
+- base semantic paths like `colors.background`, `colors.surface`, `colors.primary`, `colors.secondary`, `colors.accent`, `colors.accent2`, `colors.highlight`, and `colors.text` resolve directly from the generated theme role palette during template rendering
+- role fallback is only applied when a requested base role is missing
+
 ## Converter Compatibility
 `/src/convert` maps common aliases (`accent`, `danger`, `on_surface_variant`, `surface_high`, etc.) into these semantic roles.
 This reduces unknown token output when converting Matugen/CSS/VSCode-style templates.
