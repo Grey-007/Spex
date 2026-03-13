@@ -113,6 +113,7 @@ fn run_pipeline(image_path: &Path, cli: &Cli, mode: RunMode) -> Result<(), Box<d
     if cli.verbose {
         println!("Mode: {:?}", mode);
         println!("Dry run: {}", cli.dry_run);
+        println!("Debug theme: {}", cli.debug_theme);
         println!("No preview: {}", cli.no_preview);
         if let Some(export) = cli.export {
             println!("Export format: {}", export_name(export));
@@ -149,7 +150,12 @@ fn run_pipeline(image_path: &Path, cli: &Cli, mode: RunMode) -> Result<(), Box<d
             println!("{}", path.display());
         }
 
-        run_template_engine(&theme_palette, cli.dry_run, cli.config.as_deref())?;
+        run_template_engine(
+            &theme_palette,
+            cli.dry_run,
+            cli.debug_theme,
+            cli.config.as_deref(),
+        )?;
     }
 
     Ok(())
