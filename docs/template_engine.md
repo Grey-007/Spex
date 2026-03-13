@@ -87,6 +87,39 @@ window {
 }
 ```
 
+## 4.1 Stable Semantic Role Mapping (`colors.*`)
+When using `colors.*` token paths, Spex keeps semantic role identity stable during rendering.
+
+Direct mapping:
+- `colors.background` -> `theme.background`
+- `colors.surface` -> `theme.surface`
+- `colors.primary` -> `theme.primary`
+- `colors.secondary` -> `theme.secondary`
+- `colors.accent` -> `theme.accent`
+- `colors.accent2` -> `theme.accent2`
+- `colors.highlight` -> `theme.highlight`
+- `colors.text` -> `theme.text`
+
+This means `{{colors.surface.hex}}` always resolves from the `surface` role, not an auto-substituted role.
+
+Fallback behavior is intentionally limited and only used if a requested role is missing:
+- `accent2` -> `accent`
+- `surface` -> `background`
+- `secondary` -> `primary`
+
+Contrast safety:
+- if a resolved role color is too close to `background` (`ΔE < 8`), Spex picks the closest palette color that restores separation
+
+Debugging:
+- run with `--debug-theme` to print role resolution for each rendered `colors.*` token
+- example:
+
+```text
+Template variable: colors.surface.hex
+Resolved role: surface
+Color: #2C4A54
+```
+
 ## 5. Dynamic Palette Variables
 You can also reference colors by index:
 
