@@ -152,6 +152,18 @@ Print additional debug information (mode, dry-run state, export format, etc.).
 spex wallpaper.jpg --verbose
 ```
 
+### `--debug-theme`
+Print semantic role resolution during template rendering.
+
+This prints each `colors.*` token with:
+- requested template variable
+- resolved semantic role
+- final rendered color
+
+```bash
+spex generate wallpaper.jpg --debug-theme
+```
+
 ### `--no-preview`
 Disable terminal palette preview blocks.
 
