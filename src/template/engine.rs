@@ -19,6 +19,7 @@ struct RenderJob {
 pub fn run_template_engine(
     palette: &ThemePalette,
     dry_run: bool,
+    debug_theme: bool,
     config_override: Option<&Path>,
 ) -> Result<(), Box<dyn Error>> {
     let Some(config) = load_config_from_path(config_override)? else {
@@ -28,7 +29,7 @@ pub fn run_template_engine(
     let jobs = collect_jobs(&config)?;
     for job in &jobs {
         let raw_template = std::fs::read_to_string(&job.input)?;
-        let rendered = render(&raw_template, palette);
+        let rendered = render(&raw_template, palette, debug_theme);
 
         if dry_run {
             println!();
