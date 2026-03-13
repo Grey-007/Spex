@@ -56,16 +56,17 @@ pub fn assign_roles(colors: Vec<Color>, theme: ThemeMode) -> ThemePalette {
         used[accent2_idx] = true;
     }
 
-    let text_idx = select_highest_contrast_index(&entries, background, &used).unwrap_or_else(|| {
-        select_highest_contrast_index(&entries, background, &vec![false; entries.len()])
-            .unwrap_or(background_idx)
-    });
+    let text_idx =
+        select_highest_contrast_index(&entries, background, &used).unwrap_or_else(|| {
+            select_highest_contrast_index(&entries, background, &vec![false; entries.len()])
+                .unwrap_or(background_idx)
+        });
     if text_idx < used.len() {
         used[text_idx] = true;
     }
 
-    let highlight_idx = select_highest_contrast_index(&entries, background, &used)
-        .unwrap_or(text_idx);
+    let highlight_idx =
+        select_highest_contrast_index(&entries, background, &used).unwrap_or(text_idx);
 
     ThemePalette {
         background: background.color,
@@ -112,11 +113,7 @@ fn select_surface_index(entries: &[ColorEntry], used: &[bool]) -> Option<usize> 
 }
 
 fn saturation_ranked_indices(entries: &[ColorEntry]) -> Vec<usize> {
-    let mut ranked: Vec<usize> = entries
-        .iter()
-        .enumerate()
-        .map(|(idx, _)| idx)
-        .collect();
+    let mut ranked: Vec<usize> = entries.iter().enumerate().map(|(idx, _)| idx).collect();
 
     ranked.sort_by(|a, b| {
         entries[*b]
@@ -141,7 +138,10 @@ fn select_highest_contrast_index(
         .iter()
         .enumerate()
         .filter(|(idx, _)| !used[*idx])
-        .max_by(|(_, a), (_, b)| contrast_ratio(a.luminance, background.luminance).total_cmp(&contrast_ratio(b.luminance, background.luminance)))
+        .max_by(|(_, a), (_, b)| {
+            contrast_ratio(a.luminance, background.luminance)
+                .total_cmp(&contrast_ratio(b.luminance, background.luminance))
+        })
         .map(|(idx, _)| idx)
 }
 
