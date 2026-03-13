@@ -18,8 +18,11 @@ pub fn rewrite_template(
 
     let mut output = nested_matugen
         .replace_all(input, |caps: &Captures| {
-            rewrite_inner_token(caps.get(1).map(|m| m.as_str()).unwrap_or_default(), mappings)
-                .unwrap_or_else(|| caps.get(0).unwrap().as_str().to_string())
+            rewrite_inner_token(
+                caps.get(1).map(|m| m.as_str()).unwrap_or_default(),
+                mappings,
+            )
+            .unwrap_or_else(|| caps.get(0).unwrap().as_str().to_string())
         })
         .into_owned();
 

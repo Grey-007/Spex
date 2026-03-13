@@ -33,7 +33,8 @@ pub fn assign_roles(colors: Vec<Color>, theme: ThemeMode) -> ThemePalette {
     let background = entries[0];
     let surface = select_surface(&entries, background);
 
-    let average_saturation = entries.iter().map(|entry| entry.saturation).sum::<f32>() / entries.len() as f32;
+    let average_saturation =
+        entries.iter().map(|entry| entry.saturation).sum::<f32>() / entries.len() as f32;
     let should_boost_saturation = average_saturation < 0.18;
 
     let primary = boost_if_grayscale(
@@ -55,7 +56,9 @@ pub fn assign_roles(colors: Vec<Color>, theme: ThemeMode) -> ThemePalette {
     let highlight = entries
         .iter()
         .copied()
-        .max_by(|a, b| contrast_against(*a, background).total_cmp(&contrast_against(*b, background)))
+        .max_by(|a, b| {
+            contrast_against(*a, background).total_cmp(&contrast_against(*b, background))
+        })
         .unwrap_or(background)
         .color;
 
@@ -135,16 +138,12 @@ fn select_saturated_color(entries: &[ColorEntry], background: ColorEntry, rank: 
     }
 
     candidates.sort_by(|a, b| {
-        b.saturation
-            .total_cmp(&a.saturation)
-            .then_with(|| contrast_against(*b, background).total_cmp(&contrast_against(*a, background)))
+        b.saturation.total_cmp(&a.saturation).then_with(|| {
+            contrast_against(*b, background).total_cmp(&contrast_against(*a, background))
+        })
     });
 
-    candidates
-        .get(rank)
-        .copied()
-        .unwrap_or(candidates[0])
-        .color
+    candidates.get(rank).copied().unwrap_or(candidates[0]).color
 }
 
 fn background_distance(entry: ColorEntry, background: ColorEntry) -> f32 {
@@ -176,11 +175,7 @@ fn saturation(color: Color) -> f32 {
     let max = r.max(g).max(b);
     let min = r.min(g).min(b);
 
-    if max == 0.0 {
-        0.0
-    } else {
-        (max - min) / max
-    }
+    if max == 0.0 { 0.0 } else { (max - min) / max }
 }
 
 impl ColorEntry {
