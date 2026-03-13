@@ -108,6 +108,20 @@ Template variable examples:
 {{accent}}
 ```
 
+## Theme Derivation
+
+Spex derives theme roles from the extracted palette using luminance and saturation:
+
+- Luminance uses `0.2126*R + 0.7152*G + 0.0722*B`
+- The palette is ordered by luminance before roles are assigned
+- Dark themes sort darkest-to-lightest, light themes sort lightest-to-darkest
+- `background` is the first entry in that ordered palette
+- `primary`, `accent`, and `accent2` come from the most saturated colors that are not too close to the background
+- `text` is chosen from the opposite luminance extreme for better contrast
+- If the palette is mostly grayscale, Spex slightly boosts saturation for the main accent roles
+
+This keeps dark themes consistently dark, avoids washed-out accents, and makes exported palette ordering more predictable.
+
 ## CLI Examples
 
 Preview only:
