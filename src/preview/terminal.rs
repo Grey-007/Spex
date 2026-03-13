@@ -3,7 +3,7 @@ use crate::models::color::Color;
 const COLORS_PER_ROW: usize = 8;
 
 pub fn print_palette(colors: &[Color]) {
-    println!("Palette ({} colors)", colors.len());
+    println!("Palette ({} colors, sorted by luminance)", colors.len());
     println!();
 
     for (idx, color) in colors.iter().enumerate() {
