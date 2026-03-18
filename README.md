@@ -20,6 +20,7 @@
 <p align="center">
   <a href="#installation">Installation</a> ·
   <a href="docs/cli.md">CLI</a> ·
+  <a href="#spex-convert">spex-convert</a> ·
   <a href="docs/template_engine.md">Template Engine</a> ·
   <a href="docs/transformations.md">Transforms</a>
 </p>
@@ -50,6 +51,7 @@
 - ⚙️ Workflow automation with template hooks
 - 🖥️ Terminal palette preview output
 - 📦 Multiple export formats (`json`, `css`, `terminal`)
+- 🔁 Companion `spex-convert` CLI for migrating external templates
 - 🧱 Modular and extensible Rust architecture
 
 ## Installation
@@ -60,6 +62,11 @@
 cargo install --path .
 ```
 
+This installs both CLI binaries:
+
+- `spex`
+- `spex-convert`
+
 ### Manual build
 
 ```bash
@@ -68,10 +75,11 @@ cd spex
 cargo build --release
 ```
 
-Add the binary to your PATH:
+Add the binaries to your PATH:
 
 ```bash
 ln -s target/release/spex ~/.local/bin/spex
+ln -s target/release/spex-convert ~/.local/bin/spex-convert
 ```
 
 ## Usage
@@ -99,6 +107,30 @@ Dry run:
 ```bash
 spex wallpaper.jpg --dry-run
 ```
+
+## spex-convert
+
+`spex-convert` is the companion migration tool in this repo. It converts templates from other theming systems into Spex-compatible placeholders so existing configs are easier to move into a Spex workflow.
+
+What it does:
+
+- extracts tokens from template files
+- detects common source styles such as pywal, Matugen, and CSS-like variables
+- classifies semantic aliases with direct and fuzzy matching
+- rewrites recognized tokens into Spex syntax
+- reports unknown tokens while leaving unmatched content untouched
+
+It understands token forms such as `{token}`, `{{token}}`, `${token}`, `$token`, and nested Matugen braces like `{{{{colors.primary.default.hex}}}}`, which are normalized into canonical Spex tokens like `{{colors.primary.hex}}`.
+
+Examples:
+
+```bash
+spex-convert theme.css
+spex-convert theme.css --analyze
+spex-convert theme.css --output converted.css
+```
+
+Default behavior writes the converted template to `converted_template.spex`. `--analyze` prints detected tokens and suggested mappings without writing a file.
 
 ## Template System
 
@@ -206,6 +238,7 @@ Detailed docs are available in:
 - `docs/transformations.md`
 - `docs/hooks.md`
 - `docs/cli.md`
+- `docs/spex-convert.md`
 
 ## Contributing
 
