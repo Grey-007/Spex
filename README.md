@@ -26,9 +26,18 @@
 
 <p align="center">〰️〰️〰️〰️〰️〰️〰️〰️〰️〰️〰️〰️〰️〰️〰️〰️</p>
 
+<p>
+  <img alt="Development Warning" src="https://img.shields.io/badge/Warning-Under%20Active%20Development-ff0000?style=for-the-badge&labelColor=000000">
+</p>
+
+> [!WARNING]
+> Spex is still under active development and may behave inconsistently with some wallpapers.
+> Palette generation can occasionally produce incorrect colors while the extraction and role-mapping logic is still being improved.
+
 ## Preview
 
 `spex` generates terminal palette previews so you can quickly inspect extracted colors before exporting or rendering templates.
+
 
 ## Features
 
