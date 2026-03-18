@@ -29,7 +29,8 @@
 <p>
   <img alt="Development Warning" src="https://img.shields.io/badge/Warning-Under%20Active%20Development-ff0000?style=for-the-badge&labelColor=000000">
   <img alt="OnHold" src="https://img.shields.io/badge/OnHold-cuz%20of%20Studies-E3C36B?style=for-the-badge&labelColor=000000">
-  ![Contributions Welcome](https://img.shields.io/badge/Contributions-Welcome-brightgreen?style=for-the-badge)
+   <img alt="Contribution-Welcome" src="https://img.shields.io/badge/Contributions-Welcome-brightgreen?style=for-the-badge&labelColor=000000"
+
 </p>
 
 > [!WARNING]
