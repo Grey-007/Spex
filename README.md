@@ -175,23 +175,6 @@ For troubleshooting template role resolution, run with:
 spex generate wallpaper.jpg --debug-theme
 ```
 
-## Theme Derivation
-
-Spex derives theme roles from the extracted palette using luminance and saturation metrics:
-
-- Luminance uses `0.2126*R + 0.7152*G + 0.0722*B`
-- Saturation uses `(max(R,G,B) - min(R,G,B)) / max(R,G,B)`
-- The palette is sorted by luminance before role selection
-- Dark themes sort darkest-to-lightest, light themes sort lightest-to-darkest
-- `background` is the first color in that sorted palette
-- `surface` is the next color closest in luminance to `background`
-- `primary`, `secondary`, `accent`, and `accent2` are assigned from the remaining colors in descending saturation order
-- `text` is chosen from the remaining color with the highest contrast ratio against `background`
-- Roles stay unique unless the palette is too small to provide enough distinct colors
-- The terminal preview uses the same luminance ordering so preview output matches role selection
-
-This keeps theme role assignment aligned with the extracted palette instead of relying on fixed palette indices.
-
 ## CLI Examples
 
 Preview only:
