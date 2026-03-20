@@ -23,15 +23,6 @@ pub fn rotate_hue(color: Color, degrees: f32) -> Color {
     hsl_to_rgb((h + degrees).rem_euclid(360.0), s, l)
 }
 
-pub fn saturation(color: Color) -> f32 {
-    let (_, s, _) = rgb_to_hsl(color);
-    s
-}
-
-pub fn luminance(color: Color) -> f32 {
-    0.2126 * color.r as f32 + 0.7152 * color.g as f32 + 0.0722 * color.b as f32
-}
-
 pub fn rgb_to_hsl(color: Color) -> (f32, f32, f32) {
     let r = color.r as f32 / 255.0;
     let g = color.g as f32 / 255.0;
