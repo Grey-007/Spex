@@ -182,10 +182,7 @@ fn deduplicate_clusters(clusters: &[LabCluster], k: usize) -> Vec<Color> {
     palette
 }
 
-fn finalize_palette(
-    colors: Vec<Color>,
-    pixels: &[Pixel],
-) -> (Vec<Color>, PaletteEnhancementDebug) {
+fn finalize_palette(colors: Vec<Color>, pixels: &[Pixel]) -> (Vec<Color>, PaletteEnhancementDebug) {
     let dominant_hue_hint = dominant_hue_hint_from_pixels(pixels);
     let (mut palette, enhancement) = enhance_palette(colors, dominant_hue_hint);
     palette.sort_by(|a, b| luminance(*a).total_cmp(&luminance(*b)));
