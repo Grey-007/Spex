@@ -20,6 +20,7 @@
 <p align="center">
   <a href="#installation">Installation</a> ·
   <a href="docs/cli.md">CLI</a> ·
+  <a href="docs/extraction.md">Extraction</a> ·
   <a href="#spex-convert">spex-convert</a> ·
   <a href="docs/template_engine.md">Template Engine</a> ·
   <a href="docs/transformations.md">Transforms</a>
@@ -46,6 +47,7 @@
 ## Features
 
 - 🎨 High-quality palette extraction from wallpapers
+- 🧠 LAB k-means extraction with mediancut fallback
 - 🌗 Dark and light theme modes
 - 🧩 Config-driven template engine with loops and transformations
 - ⚙️ Workflow automation with template hooks
@@ -106,6 +108,18 @@ Dry run:
 
 ```bash
 spex wallpaper.jpg --dry-run
+```
+
+Force mediancut:
+
+```bash
+spex wallpaper.jpg --extractor mediancut
+```
+
+Inspect extraction:
+
+```bash
+spex wallpaper.jpg --debug-extractor --debug-palette
 ```
 
 ## spex-convert
@@ -233,6 +247,7 @@ spex doctor
 
 Detailed docs are available in:
 
+- `docs/extraction.md`
 - `docs/template_engine.md`
 - `docs/transformations.md`
 - `docs/hooks.md`

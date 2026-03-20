@@ -131,6 +131,17 @@ Export theme palette in a built-in format.
   spex wallpaper.jpg --export css
   ```
 
+### `--extractor <METHOD>`
+Choose the palette extraction backend.
+
+- Values: `kmeans`, `mediancut`
+- Default: `kmeans`
+- Spex automatically falls back from `kmeans` to `mediancut` if palette quality is too low.
+- Example:
+  ```bash
+  spex wallpaper.jpg --extractor mediancut
+  ```
+
 ### `--config <PATH>`
 Override template config path (`config.toml`) used for rendering/hook execution.
 
@@ -175,6 +186,28 @@ This is useful when tuning wallpapers that are too dull, too grayscale, or too c
 
 ```bash
 spex generate wallpaper.jpg --debug-colors
+```
+
+### `--debug-palette`
+Print extracted palette quality metrics, including:
+- average saturation
+- low-distance color pairs
+- nearest Delta-E distance for each palette entry
+
+```bash
+spex generate wallpaper.jpg --debug-palette
+```
+
+### `--debug-extractor`
+Print extractor internals, including:
+- requested extractor
+- final extractor
+- LAB centroid values
+- cluster sizes
+- fallback usage
+
+```bash
+spex generate wallpaper.jpg --debug-extractor
 ```
 
 ### `--no-preview`
