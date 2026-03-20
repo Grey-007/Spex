@@ -118,11 +118,28 @@ fn generated_output_path(input: &Path) -> PathBuf {
 }
 
 fn run_hooks(config: &TemplateConfig) -> io::Result<()> {
+    let mut failures = 0usize;
+
     for command in &config.hooks.commands {
-        let status = Command::new("sh").arg("-c").arg(command).status()?;
-        if !status.success() {
-            return Err(io::Error::other(format!("Hook command failed: {command}")));
+        match Command::new("sh").arg("-c").arg(command).status() {
+            Ok(status) if status.success() => {}
+            Ok(status) => {
+                failures += 1;
+                eprintln!(
+                    "[WARN] Hook command failed (status {:?}): {}",
+                    status.code(),
+                    command
+                );
+            }
+            Err(err) => {
+                failures += 1;
+                eprintln!("[WARN] Hook command failed to start: {} ({err})", command);
+            }
         }
+    }
+
+    if failures > 0 {
+        eprintln!("[WARN] Completed hooks with {failures} failure(s).");
     }
 
     Ok(())
