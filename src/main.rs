@@ -1,6 +1,6 @@
 mod cli;
-mod color_utils;
 mod color_engine;
+mod color_utils;
 mod doctor;
 mod export;
 mod extract;
@@ -16,14 +16,14 @@ use std::path::Path;
 use clap::Parser;
 
 use crate::cli::{Cli, Commands, ExportArg, ExtractorArg, ThemeArg, print_completions};
-use crate::color_utils::{PaletteEnhancementDebug, delta_e, luminance, saturation};
+use crate::color_utils::{
+    PaletteEnhancementDebug, contrast_ratio, delta_e, luminance, rgb_to_lab, saturation,
+};
 use crate::doctor::run_doctor;
 use crate::export::css::export_css;
 use crate::export::json::export_json;
 use crate::export::terminal::export_terminal;
-use crate::extract::pipeline::{
-    ExtractionOutcome, ExtractorMethod, extract_palette_with_fallback,
-};
+use crate::extract::pipeline::{ExtractionOutcome, ExtractorMethod, extract_palette_with_fallback};
 use crate::extract::sampler::sample_pixels;
 use crate::image::loader::load_image;
 use crate::models::color::Color;
@@ -98,11 +98,8 @@ fn run_pipeline(image_path: &Path, cli: &Cli, mode: RunMode) -> Result<(), Box<d
     let loaded_image = load_image(&image_str, MAX_IMAGE_DIMENSION)?;
     let sample_stride = recommended_sample_stride(loaded_image.pixels.len());
     let sampled_pixels = sample_pixels(&loaded_image.pixels, sample_stride);
-    let extraction = extract_palette_with_fallback(
-        &sampled_pixels,
-        cli.colors,
-        map_extractor(cli.extractor),
-    );
+    let extraction =
+        extract_palette_with_fallback(&sampled_pixels, cli.colors, map_extractor(cli.extractor));
     let palette = extraction.palette.clone();
 
     println!("Image loaded");
@@ -132,7 +129,10 @@ fn run_pipeline(image_path: &Path, cli: &Cli, mode: RunMode) -> Result<(), Box<d
     if cli.verbose {
         println!("Mode: {:?}", mode);
         println!("Dry run: {}", cli.dry_run);
-        println!("Requested extractor: {}", map_extractor(cli.extractor).as_str());
+        println!(
+            "Requested extractor: {}",
+            map_extractor(cli.extractor).as_str()
+        );
         println!("Debug theme: {}", cli.debug_theme);
         println!("Debug colors: {}", cli.debug_colors);
         println!("Debug palette: {}", cli.debug_palette);
@@ -162,7 +162,10 @@ fn run_pipeline(image_path: &Path, cli: &Cli, mode: RunMode) -> Result<(), Box<d
     println!("Theme palette:");
     println!("background: {}", to_hex(theme_palette.background));
     println!("surface:    {}", to_hex(theme_palette.surface));
-    println!("surface_container: {}", to_hex(theme_palette.surface_container));
+    println!(
+        "surface_container: {}",
+        to_hex(theme_palette.surface_container)
+    );
     println!("surface_high:      {}", to_hex(theme_palette.surface_high));
     println!("primary:    {}", to_hex(theme_palette.primary));
     println!("secondary:  {}", to_hex(theme_palette.secondary));
@@ -170,6 +173,10 @@ fn run_pipeline(image_path: &Path, cli: &Cli, mode: RunMode) -> Result<(), Box<d
     println!("accent2:    {}", to_hex(theme_palette.accent2));
     println!("highlight:  {}", to_hex(theme_palette.highlight));
     println!("text:       {}", to_hex(theme_palette.text));
+
+    if cli.debug_theme {
+        print_theme_debug(&theme_palette, theme);
+    }
 
     if cli.debug_colors {
         print_color_debug(&palette, &theme_palette, extraction.report.enhancement);
@@ -291,7 +298,12 @@ fn print_color_debug(
 
     println!();
     println!("Final roles:");
-    print_role_debug("background", theme_palette.background, theme_palette.background, None);
+    print_role_debug(
+        "background",
+        theme_palette.background,
+        theme_palette.background,
+        None,
+    );
     print_role_debug(
         "surface",
         theme_palette.surface,
@@ -310,7 +322,12 @@ fn print_color_debug(
         theme_palette.background,
         Some(theme_palette.primary),
     );
-    print_role_debug("primary", theme_palette.primary, theme_palette.background, None);
+    print_role_debug(
+        "primary",
+        theme_palette.primary,
+        theme_palette.background,
+        None,
+    );
     print_role_debug(
         "secondary",
         theme_palette.secondary,
@@ -339,11 +356,16 @@ fn print_color_debug(
 }
 
 fn print_role_debug(name: &str, color: Color, background: Color, primary: Option<Color>) {
+    let lab = rgb_to_lab(color);
     let mut line = format!(
-        "{name}: {} lum={:.1} sat={:.3} dE(bg)={:.1}",
+        "{name}: {} lab=({:.1}, {:.1}, {:.1}) lum={:.1} sat={:.3} contrast(bg)={:.2} dE(bg)={:.1}",
         to_hex(color),
+        lab.l,
+        lab.a,
+        lab.b,
         luminance(color),
         saturation(color),
+        contrast_ratio(color, background),
         delta_e(color, background)
     );
 
@@ -354,6 +376,111 @@ fn print_role_debug(name: &str, color: Color, background: Color, primary: Option
     println!("{line}");
 }
 
+fn print_theme_debug(theme_palette: &ThemePalette, theme: ThemeMode) {
+    println!();
+    println!("Theme debug:");
+    print_theme_role_line(
+        "background",
+        theme_palette.background,
+        theme_palette.background,
+        theme,
+    );
+    print_theme_role_line(
+        "surface",
+        theme_palette.surface,
+        theme_palette.background,
+        theme,
+    );
+    print_theme_role_line(
+        "surface_container",
+        theme_palette.surface_container,
+        theme_palette.background,
+        theme,
+    );
+    print_theme_role_line(
+        "surface_high",
+        theme_palette.surface_high,
+        theme_palette.background,
+        theme,
+    );
+    print_theme_role_line(
+        "primary",
+        theme_palette.primary,
+        theme_palette.background,
+        theme,
+    );
+    print_theme_role_line(
+        "secondary",
+        theme_palette.secondary,
+        theme_palette.background,
+        theme,
+    );
+    print_theme_role_line(
+        "accent",
+        theme_palette.accent,
+        theme_palette.background,
+        theme,
+    );
+    print_theme_role_line(
+        "accent2",
+        theme_palette.accent2,
+        theme_palette.background,
+        theme,
+    );
+    print_theme_role_line(
+        "highlight",
+        theme_palette.highlight,
+        theme_palette.background,
+        theme,
+    );
+    print_theme_role_line("text", theme_palette.text, theme_palette.background, theme);
+
+    println!();
+    println!("Role Delta-E:");
+    let role_pairs = [
+        ("background", theme_palette.background),
+        ("surface", theme_palette.surface),
+        ("primary", theme_palette.primary),
+        ("secondary", theme_palette.secondary),
+        ("accent", theme_palette.accent),
+        ("accent2", theme_palette.accent2),
+        ("highlight", theme_palette.highlight),
+        ("text", theme_palette.text),
+    ];
+
+    for left in 0..role_pairs.len() {
+        for right in (left + 1)..role_pairs.len() {
+            println!(
+                "{} <-> {} = {:.1}",
+                role_pairs[left].0,
+                role_pairs[right].0,
+                delta_e(role_pairs[left].1, role_pairs[right].1)
+            );
+        }
+    }
+}
+
+fn print_theme_role_line(name: &str, color: Color, background: Color, theme: ThemeMode) {
+    let lab = rgb_to_lab(color);
+    let theme_depth = match theme {
+        ThemeMode::Dark => luminance(color),
+        ThemeMode::Light => 255.0 - luminance(color),
+    };
+
+    println!(
+        "{name}: {} lab=({:.1}, {:.1}, {:.1}) lum={:.1} sat={:.3} theme_depth={:.1} contrast(bg)={:.2} dE(bg)={:.1}",
+        to_hex(color),
+        lab.l,
+        lab.a,
+        lab.b,
+        luminance(color),
+        saturation(color),
+        theme_depth,
+        contrast_ratio(color, background),
+        delta_e(color, background),
+    );
+}
+
 fn print_extractor_debug(extraction: &ExtractionOutcome, sample_stride: usize) {
     println!();
     println!("Extractor debug:");
@@ -361,8 +488,14 @@ fn print_extractor_debug(extraction: &ExtractionOutcome, sample_stride: usize) {
         "requested_extractor: {}",
         extraction.report.requested_method.as_str()
     );
-    println!("final_extractor: {}", extraction.report.final_method.as_str());
-    println!("fallback_triggered: {}", extraction.report.fallback_triggered);
+    println!(
+        "final_extractor: {}",
+        extraction.report.final_method.as_str()
+    );
+    println!(
+        "fallback_triggered: {}",
+        extraction.report.fallback_triggered
+    );
     println!("sample_stride: {sample_stride}");
     println!(
         "avg_saturation: {:.3}",

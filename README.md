@@ -184,9 +184,12 @@ Role fallback is only used when a requested role is missing:
 - `secondary` -> `primary`
 
 Theme background behavior:
-- dark mode picks the darkest palette color, then mixes it 70% toward black for a deeper near-black background that still keeps the wallpaper tint
-- light mode picks the lightest palette color, then mixes it 70% toward white for a cleaner near-white background with a slight wallpaper tint
-- layered surfaces are derived from that background: `surface` (+8%), `surface_container` (+12%), `surface_high` (+18%)
+- dark mode picks the darkest palette color, converts it through the LAB-aware role selector, then mixes it 60% toward black for a deeper near-black background that still keeps the wallpaper tint
+- light mode picks the lightest palette color, then mixes it 60% toward white for a cleaner near-white background with a slight wallpaper tint
+- `surface` comes from the next palette color closest in theme-relative luminance while still staying perceptually distinct from the background (`Delta-E > 8`)
+- `surface_container` and `surface_high` are then stepped away from `surface` to keep layered backgrounds readable without inverting the theme order
+- `primary`, `secondary`, `accent`, and `accent2` are chosen from the most saturated palette colors that stay distinct from the background and from each other
+- `text` is chosen from the strongest-contrast endpoint so the final role order stays stable: background -> surface -> accents -> text
 
 Low-saturation wallpaper handling:
 - if average palette saturation is below `0.25`, Spex applies a restrained vibrancy pass
@@ -198,6 +201,14 @@ For troubleshooting template role resolution, run with:
 ```bash
 spex generate wallpaper.jpg --debug-theme
 ```
+
+`--debug-theme` now also prints the final semantic role assignments with:
+- LAB values
+- luminance
+- saturation
+- theme-relative depth
+- contrast against background
+- Delta-E distances between roles
 
 For palette metrics and final role diagnostics, run with:
 

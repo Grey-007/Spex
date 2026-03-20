@@ -43,7 +43,7 @@ pub struct Cli {
     #[arg(long, global = true, action = ArgAction::SetTrue)]
     pub verbose: bool,
 
-    /// Print template semantic role resolution during rendering
+    /// Print theme-role metrics and template semantic role resolution
     #[arg(long, global = true, action = ArgAction::SetTrue)]
     pub debug_theme: bool,
 

@@ -164,9 +164,18 @@ spex wallpaper.jpg --verbose
 ```
 
 ### `--debug-theme`
-Print semantic role resolution during template rendering.
+Print semantic theme-role diagnostics and semantic role resolution during template rendering.
 
-This prints each `colors.*` token with:
+This prints the final generated theme roles with:
+- role assignments
+- LAB values
+- luminance
+- saturation
+- theme-relative depth
+- contrast against background
+- Delta-E distances between roles
+
+During template rendering it also prints each `colors.*` token with:
 - requested template variable
 - resolved semantic role
 - final rendered color

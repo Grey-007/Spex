@@ -111,7 +111,7 @@ Contrast safety:
 - if a resolved role color is too close to `background` (`ΔE < 8`), Spex picks the closest palette color that restores separation
 
 Debugging:
-- run with `--debug-theme` to print role resolution for each rendered `colors.*` token
+- run with `--debug-theme` to print both the final theme-role metrics and the resolution for each rendered `colors.*` token
 - example:
 
 ```text
@@ -121,18 +121,32 @@ Color: #2C4A54
 ```
 
 ## 4.2 Background and Surface Generation
-Theme backgrounds are biased toward cleaner endpoints while keeping wallpaper tint:
+Theme roles are selected in LAB space and then checked with Delta-E, saturation, and contrast rules.
 
-- dark theme: pick the darkest palette color, then mix it 70% toward black
-- light theme: pick the lightest palette color, then mix it 70% toward white
+Backgrounds are biased toward cleaner endpoints while keeping wallpaper tint:
 
-Surface layers are then derived from that final background:
+- dark theme: pick the darkest palette color, then mix it 60% toward black
+- light theme: pick the lightest palette color, then mix it 60% toward white
 
-- `surface` -> background lightened by 8%
-- `surface_container` -> background lightened by 12%
-- `surface_high` -> background lightened by 18%
+Surface selection stays close to the background without collapsing into it:
 
-If a layer gets too close to the background, Spex adjusts it to keep visible separation.
+- `surface` -> the next palette color closest in theme-relative luminance, as long as `Delta-E(background, surface) > 8`
+- `surface_container` -> a gentle step away from `surface`
+- `surface_high` -> a second step away from `surface_container`
+
+If a role gets too close to the background or would invert the theme order, Spex nudges lightness and saturation slightly to keep the ordering stable:
+
+- background -> surface -> accents -> text
+
+Accent role selection is saturation-first but still guarded by perceptual distance:
+
+- `primary` -> highest-saturation candidate with `Delta-E(primary, background) > 20`
+- `secondary` -> next saturated candidate with `Delta-E(secondary, primary) > 12` and `Delta-E(secondary, background) > 15`
+- `accent` and `accent2` -> next saturated candidates that stay at least `Delta-E > 10` away from the already-selected roles
+- `highlight` -> the unused color that maximizes separation from both `background` and `primary`
+- `text` -> the highest-contrast endpoint relative to the background
+
+If the palette does not have enough distinct colors, Spex applies small lightness and saturation nudges instead of inventing unrelated colors.
 
 ## 4.3 Dull Wallpaper Handling
 If the extracted palette is low-saturation on average, Spex applies a restrained enhancement pass:
@@ -143,6 +157,8 @@ If the extracted palette is low-saturation on average, Spex applies a restrained
 - grayscale palettes can receive a small hue hint based on the wallpaper's dominant color region
 
 The goal is to preserve the wallpaper's identity, not replace it with artificial colors.
+
+Use `--debug-theme` to inspect the final role assignment pass. It prints each role's LAB values, luminance, saturation, contrast against background, and pairwise Delta-E distances.
 
 ## 5. Dynamic Palette Variables
 You can also reference colors by index:
