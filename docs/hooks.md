@@ -31,6 +31,7 @@ Execution timing:
 Important behavior:
 - If `--dry-run` is enabled, hooks do not run.
 - If template rendering fails first, hooks are not executed.
+- Hook commands run independently, so one failure does not stop later commands.
 
 ## 3. Multiple Hooks and Execution Order
 When multiple hook commands are listed, Spex runs them in the same order as they appear in `commands`.
@@ -50,6 +51,11 @@ Order:
 2. `hyprctl reload`
 
 This ordering matters when one command depends on the effects of a previous command.
+
+Failure handling:
+- if one hook exits with an error, Spex logs a warning
+- remaining hooks still run
+- hook failures do not abort the full hook phase
 
 ## Practical Example Flow
 Given:

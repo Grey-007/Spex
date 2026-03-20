@@ -169,10 +169,26 @@ Role fallback is only used when a requested role is missing:
 - `surface` -> `background`
 - `secondary` -> `primary`
 
+Theme background behavior:
+- dark mode picks the darkest palette color, then mixes it 70% toward black for a deeper near-black background that still keeps the wallpaper tint
+- light mode picks the lightest palette color, then mixes it 70% toward white for a cleaner near-white background with a slight wallpaper tint
+- layered surfaces are derived from that background: `surface` (+8%), `surface_container` (+12%), `surface_high` (+18%)
+
+Low-saturation wallpaper handling:
+- if average palette saturation is below `0.25`, Spex applies a restrained vibrancy pass
+- the boost raises saturation and contrast slightly instead of replacing the palette
+- grayscale palettes can receive a small hue hint from the wallpaper's dominant color region
+
 For troubleshooting template role resolution, run with:
 
 ```bash
 spex generate wallpaper.jpg --debug-theme
+```
+
+For palette metrics and final role diagnostics, run with:
+
+```bash
+spex generate wallpaper.jpg --debug-colors
 ```
 
 ## CLI Examples

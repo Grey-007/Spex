@@ -120,6 +120,30 @@ Resolved role: surface
 Color: #2C4A54
 ```
 
+## 4.2 Background and Surface Generation
+Theme backgrounds are biased toward cleaner endpoints while keeping wallpaper tint:
+
+- dark theme: pick the darkest palette color, then mix it 70% toward black
+- light theme: pick the lightest palette color, then mix it 70% toward white
+
+Surface layers are then derived from that final background:
+
+- `surface` -> background lightened by 8%
+- `surface_container` -> background lightened by 12%
+- `surface_high` -> background lightened by 18%
+
+If a layer gets too close to the background, Spex adjusts it to keep visible separation.
+
+## 4.3 Dull Wallpaper Handling
+If the extracted palette is low-saturation on average, Spex applies a restrained enhancement pass:
+
+- average saturation below `0.25` triggers the boost
+- saturation is increased slightly, typically in the 20-40% range
+- contrast is increased slightly to keep surfaces and accents readable
+- grayscale palettes can receive a small hue hint based on the wallpaper's dominant color region
+
+The goal is to preserve the wallpaper's identity, not replace it with artificial colors.
+
 ## 5. Dynamic Palette Variables
 You can also reference colors by index:
 

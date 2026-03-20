@@ -164,6 +164,19 @@ This prints each `colors.*` token with:
 spex generate wallpaper.jpg --debug-theme
 ```
 
+### `--debug-colors`
+Print palette diagnostics, including:
+- luminance
+- saturation
+- Delta-E distance from the final background
+- final role assignments
+
+This is useful when tuning wallpapers that are too dull, too grayscale, or too close to the background.
+
+```bash
+spex generate wallpaper.jpg --debug-colors
+```
+
 ### `--no-preview`
 Disable terminal palette preview blocks.
 
