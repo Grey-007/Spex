@@ -43,6 +43,10 @@ pub struct Cli {
     #[arg(long, global = true, action = ArgAction::SetTrue)]
     pub debug_theme: bool,
 
+    /// Print palette metrics, Delta-E distances, and final role diagnostics
+    #[arg(long, global = true, action = ArgAction::SetTrue)]
+    pub debug_colors: bool,
+
     /// Disable terminal palette preview output
     #[arg(long, global = true, action = ArgAction::SetTrue)]
     pub no_preview: bool,

@@ -1,9 +1,10 @@
 use std::collections::HashMap;
 
+use crate::color_utils::{layer_background, luminance, saturation, tint_background};
 use crate::models::color::Color;
 use crate::models::theme::ThemeMode;
 
-use super::derive::{darken, desaturate, lighten, luminance, rotate_hue, saturation};
+use super::derive::{darken, desaturate, lighten, rotate_hue};
 use super::roles::*;
 
 pub struct SpexColorTokens {
@@ -19,8 +20,8 @@ pub fn build_tokens(palette: Vec<Color>, theme: ThemeMode) -> SpexColorTokens {
 
     let mut colors = HashMap::new();
 
-    let background = select_background(&palette, theme);
-    let surface = background;
+    let background = tint_background(select_background(&palette, theme), theme);
+    let surface = layer_background(background, theme, 8.0);
     let foreground = on_color(surface);
 
     let primary = select_by_saturation(&palette, 0);
@@ -44,10 +45,10 @@ pub fn build_tokens(palette: Vec<Color>, theme: ThemeMode) -> SpexColorTokens {
     let on_error_container = on_color(error_container);
 
     let surface_variant = desaturate(container_color(surface, theme, 10.0), 0.25);
-    let surface_container_low = container_color(surface, theme, 4.0);
-    let surface_container = container_color(surface, theme, 8.0);
-    let surface_container_high = container_color(surface, theme, 12.0);
-    let surface_container_highest = container_color(surface, theme, 16.0);
+    let surface_container_low = layer_background(background, theme, 4.0);
+    let surface_container = layer_background(background, theme, 12.0);
+    let surface_container_high = layer_background(background, theme, 18.0);
+    let surface_container_highest = layer_background(background, theme, 24.0);
 
     let outline = desaturate(surface_variant, 0.6);
     let outline_variant = container_color(outline, theme, 10.0);

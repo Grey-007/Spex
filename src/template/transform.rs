@@ -1,5 +1,6 @@
 use crate::color_engine::derive::{darken, lighten, rgb_to_hsl};
 use crate::color_engine::engine::{build_tokens, infer_theme_from_palette};
+use crate::color_utils::delta_e;
 use crate::models::color::Color;
 use crate::palette::roles::ThemePalette;
 
@@ -103,6 +104,8 @@ fn exact_theme_color(role: &str, palette: &ThemePalette) -> Option<Color> {
     match role {
         "background" => Some(palette.background),
         "surface" => Some(palette.surface),
+        "surface_container" => Some(palette.surface_container),
+        "surface_high" | "surface_container_high" => Some(palette.surface_high),
         "primary" => Some(palette.primary),
         "secondary" => Some(palette.secondary),
         "accent" => Some(palette.accent),
@@ -168,66 +171,6 @@ fn enforce_background_separation(role: &str, color: Color, palette: &ThemePalett
         .min_by(|a, b| delta_e(*a, color).total_cmp(&delta_e(*b, color)))
         .unwrap_or(color)
 }
-
-fn delta_e(a: Color, b: Color) -> f32 {
-    let (al, aa, ab) = rgb_to_lab(a);
-    let (bl, ba, bb) = rgb_to_lab(b);
-    let dl = al - bl;
-    let da = aa - ba;
-    let db = ab - bb;
-    (dl * dl + da * da + db * db).sqrt()
-}
-
-fn rgb_to_lab(color: Color) -> (f32, f32, f32) {
-    let r = srgb_to_linear(color.r as f32 / 255.0);
-    let g = srgb_to_linear(color.g as f32 / 255.0);
-    let b = srgb_to_linear(color.b as f32 / 255.0);
-
-    let x = (0.412_456_4 * r) + (0.357_576_1 * g) + (0.180_437_5 * b);
-    let y = (0.212_672_9 * r) + (0.715_152_2 * g) + (0.072_175 * b);
-    let z = (0.019_333_9 * r) + (0.119_192 * g) + (0.950_304_1 * b);
-
-    xyz_to_lab(x, y, z)
-}
-
-fn srgb_to_linear(c: f32) -> f32 {
-    if c <= 0.04045 {
-        c / 12.92
-    } else {
-        ((c + 0.055) / 1.055).powf(2.4)
-    }
-}
-
-fn xyz_to_lab(x: f32, y: f32, z: f32) -> (f32, f32, f32) {
-    const XN: f32 = 0.950_47;
-    const YN: f32 = 1.0;
-    const ZN: f32 = 1.088_83;
-    const EPSILON: f32 = 216.0 / 24_389.0;
-    const KAPPA: f32 = 24_389.0 / 27.0;
-
-    let xr = x / XN;
-    let yr = y / YN;
-    let zr = z / ZN;
-
-    let fx = f_lab(xr, EPSILON, KAPPA);
-    let fy = f_lab(yr, EPSILON, KAPPA);
-    let fz = f_lab(zr, EPSILON, KAPPA);
-
-    let l = (116.0 * fy) - 16.0;
-    let a = 500.0 * (fx - fy);
-    let b = 200.0 * (fy - fz);
-
-    (l, a, b)
-}
-
-fn f_lab(t: f32, epsilon: f32, kappa: f32) -> f32 {
-    if t > epsilon {
-        t.cbrt()
-    } else {
-        (kappa * t + 16.0) / 116.0
-    }
-}
-
 fn split_call<'a>(token: &'a str, marker: &str) -> Option<(&'a str, &'a str)> {
     let start = token.find(marker)?;
     if !token.ends_with(')') {
@@ -244,6 +187,8 @@ fn get_color(name: &str, palette: &ThemePalette) -> Option<Color> {
     match name {
         "background" => Some(palette.background),
         "surface" => Some(palette.surface),
+        "surface_container" => Some(palette.surface_container),
+        "surface_high" | "surface_container_high" => Some(palette.surface_high),
         "primary" => Some(palette.primary),
         "secondary" => Some(palette.secondary),
         "accent" => Some(palette.accent),
@@ -320,6 +265,16 @@ mod tests {
                 r: 16,
                 g: 32,
                 b: 48,
+            },
+            surface_container: Color {
+                r: 24,
+                g: 40,
+                b: 56,
+            },
+            surface_high: Color {
+                r: 36,
+                g: 52,
+                b: 68,
             },
             primary: Color {
                 r: 32,
