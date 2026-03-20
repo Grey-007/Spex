@@ -13,25 +13,21 @@ mod template;
 use std::error::Error;
 use std::path::Path;
 
-use ::image::GenericImageView;
 use clap::Parser;
 
-use crate::cli::{Cli, Commands, ExportArg, ThemeArg, print_completions};
-use crate::color_utils::{
-    PaletteEnhancementDebug, delta_e, dominant_hue_hint_from_pixels, enhance_palette, luminance,
-    saturation,
-};
+use crate::cli::{Cli, Commands, ExportArg, ExtractorArg, ThemeArg, print_completions};
+use crate::color_utils::{PaletteEnhancementDebug, delta_e, luminance, saturation};
 use crate::doctor::run_doctor;
 use crate::export::css::export_css;
 use crate::export::json::export_json;
 use crate::export::terminal::export_terminal;
-use crate::extract::mediancut::extract_palette_mediancut;
+use crate::extract::pipeline::{
+    ExtractionOutcome, ExtractorMethod, extract_palette_with_fallback,
+};
 use crate::extract::sampler::sample_pixels;
 use crate::image::loader::load_image;
 use crate::models::color::Color;
 use crate::models::theme::ThemeMode;
-use crate::palette::balance::balance_palette;
-use crate::palette::hue::enforce_hue_diversity;
 use crate::palette::roles::{ThemePalette, assign_roles};
 use crate::preview::terminal::print_palette;
 use crate::template::config::{expand_tilde, get_config_file_path};
@@ -42,6 +38,9 @@ enum RunMode {
     Generate,
     PreviewOnly,
 }
+
+const MAX_IMAGE_DIMENSION: u32 = 512;
+const TARGET_SAMPLED_PIXELS: usize = 40_000;
 
 fn main() {
     let cli = Cli::parse();
@@ -95,35 +94,51 @@ fn run(cli: Cli) -> Result<(), Box<dyn Error>> {
 fn run_pipeline(image_path: &Path, cli: &Cli, mode: RunMode) -> Result<(), Box<dyn Error>> {
     let theme = map_theme(cli.theme);
 
-    // Open once for metadata that we print in this phase.
-    let img = ::image::open(image_path)?;
-    let (width, height) = img.dimensions();
-
     let image_str = image_path.to_string_lossy();
-    let pixels = load_image(&image_str)?;
-    let sampled_pixels = sample_pixels(&pixels, 100);
-    let base_palette = extract_palette_mediancut(&sampled_pixels, cli.colors);
-    let balanced_palette = balance_palette(base_palette, cli.colors);
-    let mut palette = enforce_hue_diversity(balanced_palette.clone(), 20.0);
-    palette = refill_palette(palette, &balanced_palette, cli.colors);
-    let dominant_hue_hint = dominant_hue_hint_from_pixels(&sampled_pixels);
-    let (palette, enhancement_debug) = enhance_palette(palette, dominant_hue_hint);
-    let palette = order_palette_for_theme(palette, theme);
+    let loaded_image = load_image(&image_str, MAX_IMAGE_DIMENSION)?;
+    let sample_stride = recommended_sample_stride(loaded_image.pixels.len());
+    let sampled_pixels = sample_pixels(&loaded_image.pixels, sample_stride);
+    let extraction = extract_palette_with_fallback(
+        &sampled_pixels,
+        cli.colors,
+        map_extractor(cli.extractor),
+    );
+    let palette = extraction.palette.clone();
 
     println!("Image loaded");
-    println!("Width: {width}");
-    println!("Height: {height}");
-    println!("Original pixel count: {}", pixels.len());
+    println!("Width: {}", loaded_image.original_width);
+    println!("Height: {}", loaded_image.original_height);
+    println!(
+        "Processed size: {}x{}",
+        loaded_image.processed_width, loaded_image.processed_height
+    );
+    println!(
+        "Original pixel count: {}",
+        loaded_image.original_width as u64 * loaded_image.original_height as u64
+    );
+    println!("Processed pixel count: {}", loaded_image.pixels.len());
     println!("Sampled pixel count: {}", sampled_pixels.len());
     println!();
     println!("Extracting palette ({} colors)...", cli.colors);
     println!("Theme: {}", theme_name(theme));
+    println!("Extractor: {}", extraction.report.final_method.as_str());
+    if extraction.report.fallback_triggered {
+        println!(
+            "Extractor fallback: {} -> {}",
+            extraction.report.requested_method.as_str(),
+            extraction.report.final_method.as_str()
+        );
+    }
     if cli.verbose {
         println!("Mode: {:?}", mode);
         println!("Dry run: {}", cli.dry_run);
+        println!("Requested extractor: {}", map_extractor(cli.extractor).as_str());
         println!("Debug theme: {}", cli.debug_theme);
         println!("Debug colors: {}", cli.debug_colors);
+        println!("Debug palette: {}", cli.debug_palette);
+        println!("Debug extractor: {}", cli.debug_extractor);
         println!("No preview: {}", cli.no_preview);
+        println!("Sample stride: {sample_stride}");
         if let Some(export) = cli.export {
             println!("Export format: {}", export_name(export));
         }
@@ -133,6 +148,14 @@ fn run_pipeline(image_path: &Path, cli: &Cli, mode: RunMode) -> Result<(), Box<d
     if !cli.no_preview {
         print_palette(&palette);
         println!();
+    }
+
+    if cli.debug_extractor {
+        print_extractor_debug(&extraction, sample_stride);
+    }
+
+    if cli.debug_palette {
+        print_palette_debug(&palette, &extraction);
     }
 
     let theme_palette = assign_roles(palette.clone(), theme);
@@ -149,7 +172,7 @@ fn run_pipeline(image_path: &Path, cli: &Cli, mode: RunMode) -> Result<(), Box<d
     println!("text:       {}", to_hex(theme_palette.text));
 
     if cli.debug_colors {
-        print_color_debug(&palette, &theme_palette, enhancement_debug);
+        print_color_debug(&palette, &theme_palette, extraction.report.enhancement);
     }
 
     if matches!(mode, RunMode::Generate) {
@@ -203,19 +226,19 @@ fn export_name(export: ExportArg) -> &'static str {
     }
 }
 
-fn order_palette_for_theme(
-    mut colors: Vec<crate::models::color::Color>,
-    theme: ThemeMode,
-) -> Vec<crate::models::color::Color> {
-    colors.sort_by(|a, b| {
-        let a_l = luminance(*a);
-        let b_l = luminance(*b);
-        match theme {
-            ThemeMode::Dark => a_l.total_cmp(&b_l),
-            ThemeMode::Light => b_l.total_cmp(&a_l),
-        }
-    });
-    colors
+fn map_extractor(extractor: ExtractorArg) -> ExtractorMethod {
+    match extractor {
+        ExtractorArg::Kmeans => ExtractorMethod::Kmeans,
+        ExtractorArg::Mediancut => ExtractorMethod::Mediancut,
+    }
+}
+
+fn recommended_sample_stride(pixel_count: usize) -> usize {
+    if pixel_count <= TARGET_SAMPLED_PIXELS {
+        1
+    } else {
+        pixel_count.div_ceil(TARGET_SAMPLED_PIXELS)
+    }
 }
 
 fn theme_name(theme: ThemeMode) -> &'static str {
@@ -331,36 +354,85 @@ fn print_role_debug(name: &str, color: Color, background: Color, primary: Option
     println!("{line}");
 }
 
-fn refill_palette(
-    mut filtered: Vec<crate::models::color::Color>,
-    fallback: &[crate::models::color::Color],
-    k: usize,
-) -> Vec<crate::models::color::Color> {
-    if filtered.len() >= k {
-        filtered.truncate(k);
-        return filtered;
+fn print_extractor_debug(extraction: &ExtractionOutcome, sample_stride: usize) {
+    println!();
+    println!("Extractor debug:");
+    println!(
+        "requested_extractor: {}",
+        extraction.report.requested_method.as_str()
+    );
+    println!("final_extractor: {}", extraction.report.final_method.as_str());
+    println!("fallback_triggered: {}", extraction.report.fallback_triggered);
+    println!("sample_stride: {sample_stride}");
+    println!(
+        "avg_saturation: {:.3}",
+        extraction.report.quality.average_saturation
+    );
+    println!(
+        "low_distance_pairs: {}",
+        extraction.report.quality.low_distance_pairs
+    );
+    if let Some(min_delta) = extraction.report.quality.min_delta_e {
+        println!("min_delta_e: {:.2}", min_delta);
+    }
+    println!("low_quality: {}", extraction.report.quality.low_quality);
+    println!(
+        "vibrancy_boost: {}",
+        extraction.report.enhancement.vibrancy_boost_applied
+    );
+    println!(
+        "grayscale_injection: {}",
+        extraction.report.enhancement.grayscale_injection_applied
+    );
+
+    if extraction.report.kmeans_clusters.is_empty() {
+        println!("No LAB cluster report available for this run.");
+        return;
     }
 
-    for color in fallback {
-        if filtered.len() >= k {
-            break;
-        }
+    println!();
+    println!("LAB clusters:");
+    for (idx, cluster) in extraction.report.kmeans_clusters.iter().enumerate() {
+        println!(
+            "cluster{idx}: size={} lab=({:.2}, {:.2}, {:.2}) rgb={}",
+            cluster.size,
+            cluster.lab.l,
+            cluster.lab.a,
+            cluster.lab.b,
+            to_hex(cluster.color)
+        );
+    }
+}
 
-        if !filtered.contains(color) {
-            filtered.push(*color);
-        }
+fn print_palette_debug(palette: &[Color], extraction: &ExtractionOutcome) {
+    println!();
+    println!("Palette debug:");
+    println!(
+        "avg_saturation: {:.3}",
+        extraction.report.quality.average_saturation
+    );
+    println!(
+        "low_distance_pairs: {}",
+        extraction.report.quality.low_distance_pairs
+    );
+    if let Some(min_delta) = extraction.report.quality.min_delta_e {
+        println!("min_delta_e: {:.2}", min_delta);
     }
 
-    if filtered.is_empty() {
-        return filtered;
-    }
+    for (idx, color) in palette.iter().enumerate() {
+        let nearest_delta = palette
+            .iter()
+            .enumerate()
+            .filter(|(other_idx, _)| *other_idx != idx)
+            .map(|(_, other)| delta_e(*color, *other))
+            .min_by(|a, b| a.total_cmp(b));
 
-    let mut idx = 0usize;
-    while filtered.len() < k {
-        let color = filtered[idx % filtered.len()];
-        filtered.push(color);
-        idx += 1;
+        println!(
+            "color{idx}: {} lum={:.1} sat={:.3} nearest_dE={:.2}",
+            to_hex(*color),
+            luminance(*color),
+            saturation(*color),
+            nearest_delta.unwrap_or(0.0)
+        );
     }
-
-    filtered
 }

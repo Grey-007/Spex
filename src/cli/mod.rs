@@ -27,6 +27,10 @@ pub struct Cli {
     #[arg(long, global = true, value_enum, value_name = "FORMAT")]
     pub export: Option<ExportArg>,
 
+    /// Palette extraction method
+    #[arg(long, global = true, default_value_t = ExtractorArg::Kmeans, value_enum, value_name = "METHOD")]
+    pub extractor: ExtractorArg,
+
     /// Override config.toml path used by template engine
     #[arg(long, global = true, value_name = "PATH")]
     pub config: Option<PathBuf>,
@@ -47,6 +51,14 @@ pub struct Cli {
     #[arg(long, global = true, action = ArgAction::SetTrue)]
     pub debug_colors: bool,
 
+    /// Print final extracted palette metrics and quality checks
+    #[arg(long, global = true, action = ArgAction::SetTrue)]
+    pub debug_palette: bool,
+
+    /// Print extractor internals such as LAB centroids, cluster sizes, and fallback usage
+    #[arg(long, global = true, action = ArgAction::SetTrue)]
+    pub debug_extractor: bool,
+
     /// Disable terminal palette preview output
     #[arg(long, global = true, action = ArgAction::SetTrue)]
     pub no_preview: bool,
@@ -66,6 +78,12 @@ pub enum ExportArg {
     Json,
     Css,
     Terminal,
+}
+
+#[derive(Debug, Clone, Copy, ValueEnum)]
+pub enum ExtractorArg {
+    Kmeans,
+    Mediancut,
 }
 
 #[derive(Debug, Subcommand)]
